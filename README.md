@@ -1,120 +1,52 @@
+<div align="center">
+
 # FusionDesk
 
-FusionDesk is a modular remote desktop platform for enterprise remote access,
-device control, display streaming, input injection, and data redirection.
+**A modular remote desktop runtime for display, input, clipboard, file transfer, policy, and diagnostics.**
 
-The project is built around a pure C++ core and a set of replaceable runtime,
-module, transport, platform, and framework adapters. Display, input,
-clipboard, file transfer, policy, diagnostics, codec, and future tunnel
-features are designed as independently versioned capabilities instead of being
-hardwired into one desktop application.
+[![Release](https://github.com/FusionSync/fusiondesk/actions/workflows/fusiondesk-release.yml/badge.svg)](https://github.com/FusionSync/fusiondesk/actions/workflows/fusiondesk-release.yml)
+![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus&logoColor=white)
+![CMake](https://img.shields.io/badge/build-CMake-064F8C?logo=cmake&logoColor=white)
+![Qt](https://img.shields.io/badge/UI-Qt-41CD52?logo=qt&logoColor=white)
+![Windows](https://img.shields.io/badge/Windows-supported-0078D4?logo=windows&logoColor=white)
+![Linux](https://img.shields.io/badge/Linux-target-FCC624?logo=linux&logoColor=black)
+![Android](https://img.shields.io/badge/Android-planned-3DDC84?logo=android&logoColor=white)
 
-> Status: FusionDesk is under active engineering development. The core runtime,
-> module contracts, Windows PC shell, display MVP, and clipboard redirection
-> foundation are available for review and testing; public APIs and packages are
-> not stable yet.
+</div>
 
-## Why FusionDesk
+FusionDesk is an enterprise-oriented remote desktop platform built around a pure C++ core and replaceable adapters. The goal is to make remote access features composable: display streaming, input, clipboard, file transfer, codecs, transport, policy, and diagnostics attach through stable runtime contracts instead of being locked inside one monolithic client.
 
-- **Modular feature runtime**
-  Capabilities are loaded through manifests, role/platform metadata, policy
-  gates, channel bindings, and module-owned protocol validation. New features
-  can be added without taking ownership of session startup or transport code.
+> Active engineering project: runtime, module contracts, Windows PC shell, display MVP, and clipboard redirection foundations are available for review and testing. Public APIs and release packages are not stable yet.
 
-- **Multi-channel transport model**
-  Control, realtime, small-data, large-data, and auxiliary traffic can be
-  scheduled independently with priority, queue policy, pressure reporting,
-  request/response correlation, ACK paths, timeout handling, and reconnect
-  orchestration.
+## Highlights
 
-- **Cross-platform adapter boundary**
-  Core logic is kept free of Qt and operating-system APIs. Platform-specific
-  capture, input, clipboard, drag/drop, codecs, and UI integration live behind
-  adapters so Windows, Linux, macOS, Android, and embedded targets can evolve
-  without contaminating the core contracts.
-
-- **Data redirection as first-class runtime behavior**
-  Clipboard and drag/drop are modeled as transferable objects with format
-  metadata, lazy content reads, streamable file payloads, policy enforcement,
-  and audit-friendly diagnostics. Text, rich text, images, files, and drag
-  coordinates share one module-level flow.
-
-- **Enterprise policy and diagnostics**
-  Session, module, network, display, and clipboard paths expose stable
-  diagnostics for automation, product UI, CI smoke tests, and field triage.
-  Policy decisions are explicit and sit above feature startup instead of being
-  hidden inside adapters.
-
-- **Product shell and SDK direction**
-  The current PC agent/client shell proves the runtime path, while the Android
-  controller direction is designed for embedding FusionDesk into another app or
-  product surface.
-
-## Current Capabilities
-
-- C++17 core runtime for protocol, session, network, module, and policy.
-- PC agent/client shells with CMake build and CTest smoke coverage.
-- Display module MVP with raw-frame transport, runtime diagnostics, backend
-  selection, source selection, reconnect recovery, and Windows GDI/DXGI/WGC
-  adapter paths.
-- Codec selection and negotiation contracts for raw, H.264, H.265, AV1, and
-  hardware/software backend rollout.
-- Clipboard redirection foundation with text, formatted text, image, file,
-  remote file stream, drag preflight, object locking, reconnect, Windows native
-  adapter, Qt adapter, and macOS adapter entry points.
-- Multi-endpoint TCP profile planning and peer profile exchange for startup
-  negotiation.
-- Release packaging scripts for Windows and Linux engineering builds.
+| Area | What FusionDesk Provides |
+| --- | --- |
+| Runtime | Session lifecycle, module loading, policy gates, reconnect orchestration, and diagnostics in one product loop. |
+| Modules | Feature behavior is owned by versioned modules with manifests, payload codecs, validators, and role/platform metadata. |
+| Network | Multi-channel routing for control, realtime, small-data, large-data, and auxiliary traffic with priority and pressure handling. |
+| Display | Raw-frame MVP, Windows GDI/DXGI/WGC capture paths, source selection, recovery, codec selection, and H.264 rollout contracts. |
+| Clipboard | Text, rich text, images, files, drag preflight, lazy content reads, streamable file payloads, object locking, and reconnect. |
+| Platforms | Core stays free of Qt and OS APIs; Qt, Windows, macOS, Linux, Android, codec, and transport details live behind adapters. |
 
 ## Architecture
 
-FusionDesk keeps product startup thin and pushes behavior into runtime-owned
-contracts:
-
 ```text
-apps
-  -> runtime
-    -> session
-      -> policy
-      -> network
-      -> modules
-        -> adapters
-          -> platform/framework/transport/codec implementation
+apps -> runtime -> session -> policy
+                         -> network
+                         -> modules -> adapters -> platform/framework/transport/codec
 ```
 
-The main invariant is that modules own feature payloads and compatibility,
-while the mainline owns lifecycle, policy, routing, scheduling, and diagnostics.
+| Path | Purpose |
+| --- | --- |
+| `include/` | Public FusionDesk C++ headers. |
+| `src/` | Core, runtime, module, adapter, and platform implementation. |
+| `apps/` | PC agent/client shells and product startup code. |
+| `tests/` | Unit, smoke, adapter, runtime, and two-peer tests. |
+| `tools/` | Release and validation scripts. |
+| `docs/architecture/` | Architecture, stage gates, runbooks, and ADRs. |
 
-Repository layout:
-
-```text
-apps/          PC agent/client shells and product-facing startup code
-adapters/      Qt, transport, codec, and framework adapters
-bindings/      External package and language binding surfaces
-cmake/         Build helpers and cross-toolchain entries
-docs/          Architecture, stage gates, runbooks, and design records
-include/       Public FusionDesk C++ headers
-modules/       Module-facing notes and future module package surfaces
-platform/      OS-specific adapter implementation areas
-runtime/       Runtime orchestration helpers and product services
-src/           Core, runtime, module, adapter, and platform implementation
-tests/         Unit, smoke, adapter, runtime, and PC two-peer tests
-tools/         Release and validation scripts
-```
-
-Canonical design documents live in `docs/architecture/`. Start with:
-
-- `docs/architecture/README.md`
-- `docs/architecture/FUSIONDESK_ARCHITECTURE.md`
-- `docs/architecture/NETWORK_MODEL.md`
-- `docs/architecture/PROTOCOL_MESSAGE_PATTERN.md`
-- `docs/architecture/MODULE_AND_INTERFACE_BLUEPRINT.md`
-- `docs/architecture/DISPLAY_SCREEN_PIPELINE_DESIGN.md`
-- `docs/architecture/CLIPBOARD_REDIRECTION_FOUNDATION.md`
-
-## Build
-
-Windows host build:
+## Quick Start
 
 ```powershell
 cmake -S . -B build -G "Visual Studio 17 2022" -A x64
@@ -122,62 +54,51 @@ cmake --build build --config Release --parallel
 ctest --test-dir build -C Release --output-on-failure
 ```
 
-Preset entry points:
+Presets are available for Windows host builds and cross-target entry points:
 
 ```powershell
 cmake --list-presets=all .
 cmake --preset windows-host-release
 cmake --build --preset windows-host-release
-ctest --test-dir build/windows-host-release -C Release --output-on-failure
 ```
-
-Cross presets are provided for Linux, Android, OpenHarmony/HarmonyOS, and
-Rockchip board targets. They require the matching compiler, sysroot, SDK, or
-NDK environment variables described in `cmake/toolchains/README.md`.
 
 ## Packaging
 
-Windows engineering package:
-
 ```powershell
-.\tools\package_windows_release.ps1 `
-  -BuildDir build `
-  -Configuration Release `
-  -OutputDir artifacts\release `
-  -Version dev `
-  -Platform windows-x64
+.\tools\package_windows_release.ps1 -BuildDir build -Configuration Release -OutputDir artifacts\release -Version dev -Platform windows-x64
 ```
-
-Linux engineering package:
 
 ```bash
-VERSION=dev \
-PLATFORM=linux-x86_64 \
-BUILD_DIR=build \
-CONFIGURATION=Release \
-OUTPUT_DIR=artifacts/release \
-bash tools/package_linux_release.sh
+VERSION=dev PLATFORM=linux-x86_64 BUILD_DIR=build CONFIGURATION=Release OUTPUT_DIR=artifacts/release bash tools/package_linux_release.sh
 ```
 
-## Development Direction
+## Documentation
 
-The near-term work is focused on completing the product runtime loop:
+| Topic | Document |
+| --- | --- |
+| Architecture overview | [`docs/architecture/FUSIONDESK_ARCHITECTURE.md`](docs/architecture/FUSIONDESK_ARCHITECTURE.md) |
+| Network model | [`docs/architecture/NETWORK_MODEL.md`](docs/architecture/NETWORK_MODEL.md) |
+| Protocol pattern | [`docs/architecture/PROTOCOL_MESSAGE_PATTERN.md`](docs/architecture/PROTOCOL_MESSAGE_PATTERN.md) |
+| Module blueprint | [`docs/architecture/MODULE_AND_INTERFACE_BLUEPRINT.md`](docs/architecture/MODULE_AND_INTERFACE_BLUEPRINT.md) |
+| Display pipeline | [`docs/architecture/DISPLAY_SCREEN_PIPELINE_DESIGN.md`](docs/architecture/DISPLAY_SCREEN_PIPELINE_DESIGN.md) |
+| Clipboard redirection | [`docs/architecture/CLIPBOARD_REDIRECTION_FOUNDATION.md`](docs/architecture/CLIPBOARD_REDIRECTION_FOUNDATION.md) |
 
-- harden display capture, rendering, codec negotiation, and recovery;
-- finish cross-platform clipboard and drag/drop adapters;
-- extend data-redirection modules for large file and directory transfer;
-- add production transport choices, tunnel, relay, and reconnect policy;
-- mature Android controller embedding and PC product UI integration;
-- keep architecture, diagnostics, tests, and packaging aligned at each stage.
+## Roadmap Focus
 
-## Related Open-Source Remote Desktop Projects
+- Harden display capture, rendering, codec negotiation, and recovery.
+- Finish cross-platform clipboard and drag/drop adapters.
+- Expand file and directory transfer for large-data redirection.
+- Add production transport, tunnel, relay, and reconnect policy.
+- Mature Android controller embedding and PC product UI integration.
 
-These projects are useful references for the broader remote desktop ecosystem:
+## Related Projects
 
-- [RustDesk](https://github.com/rustdesk/rustdesk)
-- [FreeRDP](https://github.com/FreeRDP/FreeRDP)
-- [Apache Guacamole](https://guacamole.apache.org/)
-- [MeshCentral](https://github.com/Ylianst/MeshCentral)
-- [noVNC](https://github.com/novnc/noVNC)
-- [Remmina](https://gitlab.com/Remmina/Remmina)
-- [xrdp](https://github.com/neutrinolabs/xrdp)
+Useful references from the remote desktop ecosystem:
+
+[RustDesk](https://github.com/rustdesk/rustdesk) ·
+[FreeRDP](https://github.com/FreeRDP/FreeRDP) ·
+[Apache Guacamole](https://guacamole.apache.org/) ·
+[MeshCentral](https://github.com/Ylianst/MeshCentral) ·
+[noVNC](https://github.com/novnc/noVNC) ·
+[Remmina](https://gitlab.com/Remmina/Remmina) ·
+[xrdp](https://github.com/neutrinolabs/xrdp)
