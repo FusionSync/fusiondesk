@@ -1,0 +1,186 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1040" viewBox="0 0 1600 1040" role="img" aria-labelledby="title desc">
+  <title id="title">FusionDesk runtime architecture</title>
+  <desc id="desc">Complete box-line architecture diagram for FusionDesk remote desktop runtime, showing apps, runtime, session, policy, network, modules, adapters, and operating system services.</desc>
+  <defs>
+    <style>
+      .page { fill: #f7f9fc; }
+      .title { font: 700 38px Arial, sans-serif; fill: #162033; }
+      .subtitle { font: 400 18px Arial, sans-serif; fill: #526070; }
+      .lane-title { font: 700 18px Arial, sans-serif; fill: #162033; }
+      .box-title { font: 700 17px Arial, sans-serif; fill: #172033; }
+      .box-text { font: 400 13px Arial, sans-serif; fill: #536173; }
+      .small { font: 400 12px Arial, sans-serif; fill: #536173; }
+      .mono { font: 600 12px Consolas, monospace; fill: #44515f; }
+      .lane { fill: #ffffff; stroke: #d7dee8; stroke-width: 1.5; }
+      .box { fill: #ffffff; stroke: #aeb9c8; stroke-width: 1.4; rx: 10; }
+      .core { fill: #eef6ff; stroke: #4b8bd6; }
+      .runtime { fill: #effaf5; stroke: #28a06a; }
+      .module { fill: #fff8e8; stroke: #c9911c; }
+      .adapter { fill: #f3efff; stroke: #8662d8; }
+      .platform { fill: #fff0f2; stroke: #d05b72; }
+      .wire { stroke: #607080; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+      .wire-soft { stroke: #9aa7b6; stroke-width: 1.6; fill: none; marker-end: url(#arrowSoft); stroke-dasharray: 6 6; }
+      .bus { stroke: #2f465c; stroke-width: 3; fill: none; }
+      .chip { fill: #e8edf4; stroke: #c2ccda; stroke-width: 1; rx: 12; }
+      .chip-text { font: 600 12px Arial, sans-serif; fill: #39485a; }
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#607080" />
+    </marker>
+    <marker id="arrowSoft" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#9aa7b6" />
+    </marker>
+  </defs>
+
+  <rect class="page" width="1600" height="1040" />
+
+  <text class="title" x="64" y="68">FusionDesk Architecture</text>
+  <text class="subtitle" x="64" y="98">A modular remote desktop runtime where session, policy, network, modules, and adapters stay separated by contract.</text>
+
+  <rect class="chip" x="1160" y="42" width="116" height="28" />
+  <text class="chip-text" x="1182" y="61">C++17 Core</text>
+  <rect class="chip" x="1286" y="42" width="90" height="28" />
+  <text class="chip-text" x="1310" y="61">CMake</text>
+  <rect class="chip" x="1386" y="42" width="82" height="28" />
+  <text class="chip-text" x="1415" y="61">Qt</text>
+  <rect class="chip" x="1478" y="42" width="76" height="28" />
+  <text class="chip-text" x="1498" y="61">Win</text>
+
+  <rect class="lane" x="48" y="130" width="1504" height="126" rx="14" />
+  <text class="lane-title" x="72" y="164">Product Surfaces</text>
+  <rect class="box" x="80" y="182" width="210" height="54" />
+  <text class="box-title" x="104" y="206">PC Agent</text>
+  <text class="box-text" x="104" y="225">capture, input, clipboard source</text>
+  <rect class="box" x="330" y="182" width="210" height="54" />
+  <text class="box-title" x="354" y="206">PC Client</text>
+  <text class="box-text" x="354" y="225">render, inject, clipboard sink</text>
+  <rect class="box" x="580" y="182" width="210" height="54" />
+  <text class="box-title" x="604" y="206">Android Controller</text>
+  <text class="box-text" x="604" y="225">embedded product surface</text>
+  <rect class="box" x="830" y="182" width="210" height="54" />
+  <text class="box-title" x="854" y="206">CLI / Automation</text>
+  <text class="box-text" x="854" y="225">profiles, smoke, diagnostics</text>
+  <rect class="box" x="1080" y="182" width="430" height="54" />
+  <text class="box-title" x="1104" y="206">Product UI / Service</text>
+  <text class="box-text" x="1104" y="225">policy, status, packaging, field workflows</text>
+
+  <rect class="lane" x="48" y="286" width="1504" height="238" rx="14" />
+  <text class="lane-title" x="72" y="320">Runtime and Session Mainline</text>
+  <rect class="box runtime" x="80" y="344" width="220" height="132" />
+  <text class="box-title" x="104" y="370">RuntimeHost</text>
+  <text class="box-text" x="104" y="394">process bootstrap</text>
+  <text class="box-text" x="104" y="414">product profile loading</text>
+  <text class="box-text" x="104" y="434">adapter dependency wiring</text>
+  <text class="box-text" x="104" y="454">diagnostic publisher</text>
+
+  <rect class="box runtime" x="338" y="344" width="220" height="132" />
+  <text class="box-title" x="362" y="370">SessionManager</text>
+  <text class="box-text" x="362" y="394">client/agent session factory</text>
+  <text class="box-text" x="362" y="414">lifecycle ownership</text>
+  <text class="box-text" x="362" y="434">reconnect entry point</text>
+  <text class="box-text" x="362" y="454">module composition</text>
+
+  <rect class="box runtime" x="596" y="344" width="220" height="132" />
+  <text class="box-title" x="620" y="370">Session</text>
+  <text class="box-text" x="620" y="394">role and peer context</text>
+  <text class="box-text" x="620" y="414">state machine</text>
+  <text class="box-text" x="620" y="434">feature enablement</text>
+  <text class="box-text" x="620" y="454">runtime diagnostics</text>
+
+  <rect class="box runtime" x="854" y="344" width="220" height="132" />
+  <text class="box-title" x="878" y="370">ModuleHost</text>
+  <text class="box-text" x="878" y="394">manifest registration</text>
+  <text class="box-text" x="878" y="414">start/stop gates</text>
+  <text class="box-text" x="878" y="434">ingress attach/detach</text>
+  <text class="box-text" x="878" y="454">module diagnostics</text>
+
+  <rect class="box runtime" x="1112" y="344" width="180" height="132" />
+  <text class="box-title" x="1136" y="370">PolicyEngine</text>
+  <text class="box-text" x="1136" y="394">license grants</text>
+  <text class="box-text" x="1136" y="414">device profile</text>
+  <text class="box-text" x="1136" y="434">session security</text>
+  <text class="box-text" x="1136" y="454">allow/deny/audit</text>
+
+  <rect class="box runtime" x="1328" y="344" width="180" height="132" />
+  <text class="box-title" x="1352" y="370">Diagnostics</text>
+  <text class="box-text" x="1352" y="394">runtime rows</text>
+  <text class="box-text" x="1352" y="414">health snapshots</text>
+  <text class="box-text" x="1352" y="434">test evidence</text>
+  <text class="box-text" x="1352" y="454">field triage</text>
+
+  <path class="wire" d="M290 209 C320 260, 170 300, 190 344" />
+  <path class="wire" d="M540 209 C570 260, 430 300, 448 344" />
+  <path class="wire" d="M790 209 C820 260, 680 300, 706 344" />
+  <path class="wire" d="M1040 209 C1068 260, 925 300, 964 344" />
+  <path class="wire" d="M1295 236 C1325 270, 1380 300, 1418 344" />
+  <path class="wire" d="M300 410 L338 410" />
+  <path class="wire" d="M558 410 L596 410" />
+  <path class="wire" d="M816 410 L854 410" />
+  <path class="wire" d="M1074 410 L1112 410" />
+  <path class="wire" d="M1292 410 L1328 410" />
+
+  <rect class="lane" x="48" y="554" width="1504" height="198" rx="14" />
+  <text class="lane-title" x="72" y="588">Core Contracts</text>
+  <rect class="box core" x="80" y="612" width="220" height="92" />
+  <text class="box-title" x="104" y="638">Protocol</text>
+  <text class="mono" x="104" y="660">PacketEnvelope</text>
+  <text class="box-text" x="104" y="680">request, response, ACK, stream</text>
+  <rect class="box core" x="338" y="612" width="220" height="92" />
+  <text class="box-title" x="362" y="638">NetworkRouter</text>
+  <text class="box-text" x="362" y="660">ingress/egress routing</text>
+  <text class="box-text" x="362" y="680">channel and transfer type keys</text>
+  <rect class="box core" x="596" y="612" width="220" height="92" />
+  <text class="box-title" x="620" y="638">ChannelRegistry</text>
+  <text class="box-text" x="620" y="660">control, realtime, small data</text>
+  <text class="box-text" x="620" y="680">large data, auxiliary</text>
+  <rect class="box core" x="854" y="612" width="220" height="92" />
+  <text class="box-title" x="878" y="638">PriorityScheduler</text>
+  <text class="box-text" x="878" y="660">queue policy</text>
+  <text class="box-text" x="878" y="680">pressure and fairness</text>
+  <rect class="box core" x="1112" y="612" width="180" height="92" />
+  <text class="box-title" x="1136" y="638">RequestTracker</text>
+  <text class="box-text" x="1136" y="660">correlation id</text>
+  <text class="box-text" x="1136" y="680">timeouts</text>
+  <rect class="box core" x="1328" y="612" width="180" height="92" />
+  <text class="box-title" x="1352" y="638">Policy Types</text>
+  <text class="box-text" x="1352" y="660">feature masks</text>
+  <text class="box-text" x="1352" y="680">transport constraints</text>
+
+  <path class="wire" d="M964 476 C964 524, 448 560, 448 612" />
+  <path class="wire" d="M706 476 C706 536, 190 556, 190 612" />
+  <path class="wire" d="M1202 476 C1212 526, 1420 560, 1418 612" />
+  <path class="wire" d="M448 704 L448 736 L1418 736 L1418 704" />
+  <path class="wire" d="M706 704 L706 736" />
+  <path class="wire" d="M964 704 L964 736" />
+  <path class="wire" d="M1202 704 L1202 736" />
+  <path class="wire" d="M190 704 L190 736" />
+
+  <rect class="lane" x="48" y="782" width="1504" height="124" rx="14" />
+  <text class="lane-title" x="72" y="816">Feature Modules</text>
+  <rect class="box module" x="80" y="838" width="220" height="48" />
+  <text class="box-title" x="104" y="868">display.screen</text>
+  <rect class="box module" x="338" y="838" width="220" height="48" />
+  <text class="box-title" x="362" y="868">input.control</text>
+  <rect class="box module" x="596" y="838" width="220" height="48" />
+  <text class="box-title" x="620" y="868">clipboard.redirect</text>
+  <rect class="box module" x="854" y="838" width="220" height="48" />
+  <text class="box-title" x="878" y="868">transfer.data</text>
+  <rect class="box module" x="1112" y="838" width="396" height="48" />
+  <text class="box-title" x="1136" y="868">future modules: audio, filesystem, printer, camera</text>
+
+  <path class="bus" d="M190 736 L190 838" />
+  <path class="bus" d="M448 736 L448 838" />
+  <path class="bus" d="M706 736 L706 838" />
+  <path class="bus" d="M964 736 L964 838" />
+  <path class="bus" d="M1310 736 L1310 838" />
+
+  <rect class="lane" x="48" y="932" width="1504" height="74" rx="14" />
+  <text class="lane-title" x="72" y="962">Adapters and OS Services</text>
+  <text class="small" x="80" y="986">Qt UI/rendering | TCP/transport | codec backends | Windows/macOS/Linux/Android platform services | screen capture | input injection | clipboard/drag | file streams</text>
+
+  <path class="wire-soft" d="M190 886 L190 932" />
+  <path class="wire-soft" d="M448 886 L448 932" />
+  <path class="wire-soft" d="M706 886 L706 932" />
+  <path class="wire-soft" d="M964 886 L964 932" />
+  <path class="wire-soft" d="M1310 886 L1310 932" />
+</svg>

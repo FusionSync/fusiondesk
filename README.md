@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="assets/brand/fusiondesk-mark.svg" width="96" alt="FusionDesk logo">
+
 # FusionDesk
 
 **A modular remote desktop runtime for display, input, clipboard, file transfer, policy, and diagnostics.**
@@ -11,6 +13,8 @@
 ![Windows](https://img.shields.io/badge/Windows-supported-0078D4?logo=windows&logoColor=white)
 ![Linux](https://img.shields.io/badge/Linux-target-FCC624?logo=linux&logoColor=black)
 ![Android](https://img.shields.io/badge/Android-planned-3DDC84?logo=android&logoColor=white)
+
+<img src="assets/brand/fusiondesk-hero.png" alt="FusionDesk modular remote desktop runtime" width="100%">
 
 </div>
 
@@ -30,6 +34,8 @@ FusionDesk is an enterprise-oriented remote desktop platform built around a pure
 | Platforms | Core stays free of Qt and OS APIs; Qt, Windows, macOS, Linux, Android, codec, and transport details live behind adapters. |
 
 ## Architecture
+
+![FusionDesk architecture](docs/assets/fusiondesk-architecture.svg)
 
 ```text
 apps -> runtime -> session -> policy
@@ -71,6 +77,19 @@ cmake --build --preset windows-host-release
 ```bash
 VERSION=dev PLATFORM=linux-x86_64 BUILD_DIR=build CONFIGURATION=Release OUTPUT_DIR=artifacts/release bash tools/package_linux_release.sh
 ```
+
+## Brand Assets
+
+| Asset | Path |
+| --- | --- |
+| Logo mark | [`assets/brand/fusiondesk-mark.svg`](assets/brand/fusiondesk-mark.svg) |
+| Icon | [`assets/brand/fusiondesk.ico`](assets/brand/fusiondesk.ico) |
+| AI icon concept | [`assets/brand/fusiondesk-ai-icon.png`](assets/brand/fusiondesk-ai-icon.png) |
+| AI ICO | [`assets/brand/fusiondesk-ai.ico`](assets/brand/fusiondesk-ai.ico) |
+| Hero image | [`assets/brand/fusiondesk-hero.png`](assets/brand/fusiondesk-hero.png) |
+| Social preview | [`assets/brand/fusiondesk-social-preview.svg`](assets/brand/fusiondesk-social-preview.svg) |
+| Architecture poster | [`assets/brand/fusiondesk-architecture-poster.png`](assets/brand/fusiondesk-architecture-poster.png) |
+| Architecture diagram | [`docs/assets/fusiondesk-architecture.svg`](docs/assets/fusiondesk-architecture.svg) |
 
 ## Documentation
 

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">FusionDesk mark</title>
+  <desc id="desc">FusionDesk geometric monitor and connection mark.</desc>
+  <defs>
+    <linearGradient id="screen" x1="96" x2="416" y1="112" y2="336" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1263d8" />
+      <stop offset="1" stop-color="#20b37e" />
+    </linearGradient>
+    <linearGradient id="node" x1="136" x2="376" y1="152" y2="330" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.95" />
+      <stop offset="1" stop-color="#dff6ff" stop-opacity="0.9" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#0f1725" />
+  <rect x="82" y="112" width="348" height="228" rx="34" fill="url(#screen)" />
+  <rect x="112" y="142" width="288" height="168" rx="20" fill="#0f1725" opacity="0.22" />
+  <circle cx="168" cy="226" r="34" fill="url(#node)" />
+  <circle cx="256" cy="188" r="26" fill="url(#node)" />
+  <circle cx="344" cy="246" r="34" fill="url(#node)" />
+  <path d="M198 213 L233 198" stroke="#ffffff" stroke-width="18" stroke-linecap="round" opacity="0.92" />
+  <path d="M279 203 L316 228" stroke="#ffffff" stroke-width="18" stroke-linecap="round" opacity="0.92" />
+  <path d="M208 374 H304" stroke="#8ed8ff" stroke-width="30" stroke-linecap="round" />
+  <path d="M256 340 V386" stroke="#8ed8ff" stroke-width="30" stroke-linecap="round" />
+  <rect x="166" y="398" width="180" height="34" rx="17" fill="#8ed8ff" />
+</svg>
