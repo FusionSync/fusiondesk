@@ -1,0 +1,4 @@
+interface:
+  display_name: "FusionDesk Architecture"
+  short_description: "FusionDesk architecture guardrails"
+  default_prompt: "Apply the FusionDesk architecture baseline before designing or changing code. Check docs/architecture, preserve core purity, route modules through session/network/policy contracts, and report stage-gate evidence."

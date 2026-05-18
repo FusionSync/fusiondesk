@@ -1,0 +1,158 @@
+{
+  "version": 2,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "release-base",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "windows-host-release",
+      "displayName": "Windows host Release",
+      "inherits": "release-base",
+      "generator": "Visual Studio 17 2022"
+    },
+    {
+      "name": "linux-x86_64-release",
+      "displayName": "Linux x86_64 Release",
+      "inherits": "release-base",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchains/linux-x86_64.cmake"
+      }
+    },
+    {
+      "name": "linux-aarch64-release",
+      "displayName": "Linux aarch64 Release",
+      "inherits": "release-base",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchains/linux-aarch64.cmake"
+      }
+    },
+    {
+      "name": "linux-loongarch64-release",
+      "displayName": "Linux loongarch64 Release",
+      "inherits": "release-base",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchains/linux-loongarch64.cmake"
+      }
+    },
+    {
+      "name": "linux-mips64el-release",
+      "displayName": "Linux mips64el Release",
+      "inherits": "release-base",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchains/linux-mips64el.cmake"
+      }
+    },
+    {
+      "name": "linux-rk3568-aarch64-release",
+      "displayName": "Linux RK3568 aarch64 Release",
+      "inherits": "release-base",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchains/linux-rk3568-aarch64.cmake"
+      }
+    },
+    {
+      "name": "linux-rk3588-aarch64-release",
+      "displayName": "Linux RK3588 aarch64 Release",
+      "inherits": "release-base",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchains/linux-rk3588-aarch64.cmake"
+      }
+    },
+    {
+      "name": "android-arm64-v8a-release",
+      "displayName": "Android arm64-v8a Release",
+      "inherits": "release-base",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchains/android-arm64-v8a.cmake"
+      }
+    },
+    {
+      "name": "android-x86_64-release",
+      "displayName": "Android x86_64 Release",
+      "inherits": "release-base",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchains/android-x86_64.cmake"
+      }
+    },
+    {
+      "name": "openharmony-arm64-release",
+      "displayName": "OpenHarmony/HarmonyOS arm64 Release",
+      "inherits": "release-base",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchains/openharmony-arm64.cmake"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "windows-host-release",
+      "configurePreset": "windows-host-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "linux-x86_64-release",
+      "configurePreset": "linux-x86_64-release"
+    },
+    {
+      "name": "linux-aarch64-release",
+      "configurePreset": "linux-aarch64-release"
+    },
+    {
+      "name": "linux-loongarch64-release",
+      "configurePreset": "linux-loongarch64-release"
+    },
+    {
+      "name": "linux-mips64el-release",
+      "configurePreset": "linux-mips64el-release"
+    },
+    {
+      "name": "linux-rk3568-aarch64-release",
+      "configurePreset": "linux-rk3568-aarch64-release"
+    },
+    {
+      "name": "linux-rk3588-aarch64-release",
+      "configurePreset": "linux-rk3588-aarch64-release"
+    },
+    {
+      "name": "android-arm64-v8a-release",
+      "configurePreset": "android-arm64-v8a-release"
+    },
+    {
+      "name": "android-x86_64-release",
+      "configurePreset": "android-x86_64-release"
+    },
+    {
+      "name": "openharmony-arm64-release",
+      "configurePreset": "openharmony-arm64-release"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "windows-host-release",
+      "configurePreset": "windows-host-release",
+      "configuration": "Release",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

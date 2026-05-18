@@ -1,0 +1,172 @@
+name: FusionDesk Release Packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version or tag name for manual release publishing
+        required: true
+        default: fusiondesk-manual
+        type: string
+      publish_release:
+        description: Create or update a GitHub Release with the generated zip files
+        required: true
+        default: true
+        type: boolean
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*'
+      - 'V*'
+
+permissions:
+  contents: write
+
+env:
+  PACKAGE_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || inputs.version || format('fusiondesk-build-{0}', github.run_number) }}
+
+jobs:
+  windows:
+    name: Windows FusionDesk Release Zip
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Qt 5.15.2
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: 5.15.2
+          host: windows
+          target: desktop
+          arch: win64_msvc2019_64
+
+      - name: Add Qt tools to PATH
+        shell: powershell
+        run: |
+          "$env:QT_ROOT_DIR\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Configure
+        shell: powershell
+        run: cmake -S . -B build -G "Visual Studio 17 2022" -A x64
+
+      - name: Build
+        shell: powershell
+        run: cmake --build build --config Release --parallel
+
+      - name: Test
+        shell: powershell
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Package
+        shell: powershell
+        run: |
+          .\tools\package_windows_release.ps1 `
+            -BuildDir build `
+            -Configuration Release `
+            -OutputDir artifacts\release `
+            -Version "$env:PACKAGE_VERSION" `
+            -Platform windows-x64
+
+      - name: Upload Windows zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: fusiondesk-windows-x64
+          path: artifacts/release/fusiondesk-windows-x64-*.zip
+          if-no-files-found: error
+
+  linux:
+    name: Linux FusionDesk Release Zip
+    runs-on: ubuntu-22.04
+    env:
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            libgl1-mesa-dev \
+            ninja-build
+
+      - name: Install Qt 5.15.2
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: 5.15.2
+          host: linux
+          target: desktop
+          arch: gcc_64
+
+      - name: Add Qt tools to PATH
+        run: echo "$QT_ROOT_DIR/bin" >> "$GITHUB_PATH"
+
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Package
+        run: |
+          VERSION="$PACKAGE_VERSION" \
+          PLATFORM=linux-x86_64 \
+          BUILD_DIR=build \
+          CONFIGURATION=Release \
+          OUTPUT_DIR=artifacts/release \
+          bash tools/package_linux_release.sh
+
+      - name: Upload Linux zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: fusiondesk-linux-x86_64
+          path: artifacts/release/fusiondesk-linux-x86_64-*.zip
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    if: ${{ github.ref_type == 'tag' || (github.event_name == 'workflow_dispatch' && inputs.publish_release) }}
+    needs:
+      - windows
+      - linux
+    runs-on: ubuntu-22.04
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG_NAME: ${{ github.ref_type == 'tag' && github.ref_name || inputs.version }}
+    steps:
+      - name: Download package artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+
+      - name: Create or update GitHub Release
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$TAG_NAME" ]]; then
+            echo "TAG_NAME is empty" >&2
+            exit 1
+          fi
+
+          if ! gh release view "$TAG_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$TAG_NAME" \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "FusionDesk $TAG_NAME" \
+              --notes "Automated FusionDesk Windows/Linux release zip packages."
+          fi
+
+          shopt -s globstar nullglob
+          assets=(release-assets/**/*.zip)
+          if (( ${#assets[@]} == 0 )); then
+            echo "No release zip assets found" >&2
+            exit 1
+          fi
+          gh release upload "$TAG_NAME" "${assets[@]}" --repo "$GITHUB_REPOSITORY" --clobber

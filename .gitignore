@@ -1,0 +1,17 @@
+/Target/
+/Source/
+/Build/
+/packaging/
+/build-hsr_for_pc-Desktop_Qt_5_15_2_MSVC2019*
+/build-hsr_for_pc-Desktop_Qt_5_15_2_GCC_64bit-Debug*
+/build-hsr*
+*.user
+*.qm
+*.log
+.vs
+.vscode
+/artifacts/
+/dist/
+/build/
+/logs/
+.DS_Store

@@ -1,0 +1,14 @@
+set(FUSIONDESK_TARGET_OS openharmony CACHE STRING "FusionDesk target OS")
+set(FUSIONDESK_TARGET_ARCH arm64 CACHE STRING "FusionDesk target architecture")
+
+if(NOT DEFINED ENV{FUSIONDESK_OHOS_TOOLCHAIN_FILE})
+    message(FATAL_ERROR "Set FUSIONDESK_OHOS_TOOLCHAIN_FILE to the OpenHarmony/HarmonyOS CMake toolchain file")
+endif()
+
+file(TO_CMAKE_PATH "$ENV{FUSIONDESK_OHOS_TOOLCHAIN_FILE}" FUSIONDESK_OHOS_TOOLCHAIN_FILE)
+
+if(NOT EXISTS "${FUSIONDESK_OHOS_TOOLCHAIN_FILE}")
+    message(FATAL_ERROR "OpenHarmony/HarmonyOS toolchain file not found: ${FUSIONDESK_OHOS_TOOLCHAIN_FILE}")
+endif()
+
+include("${FUSIONDESK_OHOS_TOOLCHAIN_FILE}")
