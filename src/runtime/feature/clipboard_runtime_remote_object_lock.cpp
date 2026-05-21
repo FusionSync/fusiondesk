@@ -1,6 +1,7 @@
 #include "fusiondesk/runtime/feature/clipboard_runtime_service.h"
 
 #include <chrono>
+#include <thread>
 #include <utility>
 
 #include "fusiondesk/core/session/session.h"
@@ -19,6 +20,11 @@ std::uint64_t monotonicNowUsec()
         std::chrono::duration_cast<std::chrono::microseconds>(
             clock::now().time_since_epoch())
             .count());
+}
+
+void pauseClipboardObjectPoll()
+{
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
 }
 
 modules::clipboard::FdclObjectLock fdclObjectLockFromTransfer(
@@ -131,9 +137,7 @@ ClipboardRuntimeRemoteReader::lockRemoteObject(
     }
 
     std::uint64_t nowUsec = startUsec;
-    for (std::uint32_t iteration = 0;
-         iteration < 10000 && nowUsec <= deadlineUsec;
-         ++iteration) {
+    while (nowUsec <= deadlineUsec) {
         options_.pump->pumpOnce();
         nowUsec = options_.pump->monotonicNowUsec();
         module->expirePendingReads(nowUsec);
@@ -165,6 +169,8 @@ ClipboardRuntimeRemoteReader::lockRemoteObject(
             if (current.pendingReads <= before.pendingReads)
                 break;
         }
+        if (nowUsec < deadlineUsec)
+            pauseClipboardObjectPoll();
     }
 
     module->expirePendingReads(deadlineUsec + 1);
@@ -261,9 +267,7 @@ ClipboardRuntimeRemoteReader::unlockRemoteObject(
     }
 
     std::uint64_t nowUsec = startUsec;
-    for (std::uint32_t iteration = 0;
-         iteration < 10000 && nowUsec <= deadlineUsec;
-         ++iteration) {
+    while (nowUsec <= deadlineUsec) {
         options_.pump->pumpOnce();
         nowUsec = options_.pump->monotonicNowUsec();
         module->expirePendingReads(nowUsec);
@@ -295,6 +299,8 @@ ClipboardRuntimeRemoteReader::unlockRemoteObject(
             if (current.pendingReads <= before.pendingReads)
                 break;
         }
+        if (nowUsec < deadlineUsec)
+            pauseClipboardObjectPoll();
     }
 
     module->expirePendingReads(deadlineUsec + 1);

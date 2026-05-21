@@ -493,7 +493,10 @@ runtime::DisplayMvpDependencies makeProfileDependencies(
             captureRuntime->selectionRequest = capturePlan.selectionRequest;
         }
 #endif
-#if defined(FUSIONDESK_PC_HAS_WINDOWS_FEATURE_ADAPTERS)
+#if defined(FUSIONDESK_PC_HAS_WINDOWS_FEATURE_ADAPTERS) || \
+    defined(FUSIONDESK_PC_HAS_MACOS_FEATURE_ADAPTERS) || \
+    defined(FUSIONDESK_PC_HAS_LINUX_FEATURE_ADAPTERS) || \
+    defined(FUSIONDESK_PC_HAS_QT_FEATURE_ADAPTERS)
         if (clipboardProfileRequested(argc, argv))
             dependencies.clipboardEndpoint =
                 makeClipboardEndpoint(argc,
@@ -501,6 +504,8 @@ runtime::DisplayMvpDependencies makeProfileDependencies(
                                       *dependencies.clipboardPolicy,
                                       clipboardRemoteReader,
                                       clipboardDragCoordinateMapper);
+#endif
+#if defined(FUSIONDESK_PC_HAS_WINDOWS_FEATURE_ADAPTERS)
         dependencies.inputInjector =
             std::make_shared<platform::windows::input::WindowsInputInjector>();
 #endif
@@ -593,7 +598,10 @@ runtime::DisplayMvpDependencies makeProfileDependencies(
 #if defined(FUSIONDESK_PC_HAS_QT_FEATURE_ADAPTERS)
     dependencies.inputCapture = std::make_shared<adapters::qt::input::QtInputCapture>();
 #endif
-#if defined(FUSIONDESK_PC_HAS_WINDOWS_FEATURE_ADAPTERS)
+#if defined(FUSIONDESK_PC_HAS_WINDOWS_FEATURE_ADAPTERS) || \
+    defined(FUSIONDESK_PC_HAS_MACOS_FEATURE_ADAPTERS) || \
+    defined(FUSIONDESK_PC_HAS_LINUX_FEATURE_ADAPTERS) || \
+    defined(FUSIONDESK_PC_HAS_QT_FEATURE_ADAPTERS)
     if (clipboardProfileRequested(argc, argv))
         dependencies.clipboardEndpoint =
             makeClipboardEndpoint(argc,

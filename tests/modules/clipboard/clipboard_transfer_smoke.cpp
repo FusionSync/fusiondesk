@@ -18,6 +18,11 @@ protocol::ByteBuffer bytes(const std::string& value)
     return protocol::ByteBuffer(value.begin(), value.end());
 }
 
+std::string text(const protocol::ByteBuffer& value)
+{
+    return std::string(value.begin(), value.end());
+}
+
 class MemoryRemoteFileReader : public IClipboardRemoteFileReader
 {
 public:
@@ -147,6 +152,38 @@ void mapsNativeNamesThroughCanonicalRegistry()
             return candidate.native.nativeFormatName == "CF_DIB" &&
                    candidate.encoding == TransferEncodingMode::Transcoded;
         }));
+
+    TransferFormatMappingRequest mozFileRequest;
+    mozFileRequest.native.platform = TransferPlatformFamily::Linux;
+    mozFileRequest.native.nativeFormatName = "text/x-moz-url";
+    const TransferFormatMappingResult mozMapped =
+        mapper.mapNativeToCanonical(mozFileRequest);
+    assert(mozMapped.mapped);
+    assert(mozMapped.descriptor.canonicalFormat == FdclFileListFormat);
+
+    const std::vector<NativeTransferFormatCandidate> linuxFileTargets =
+        mapper.nativeCandidates(FdclFileListFormat,
+                                TransferPlatformFamily::Linux);
+    assert(std::any_of(
+        linuxFileTargets.begin(),
+        linuxFileTargets.end(),
+        [](const NativeTransferFormatCandidate& candidate) {
+            return candidate.native.nativeFormatName ==
+                   "x-special/gnome-copied-files";
+        }));
+    assert(std::any_of(
+        linuxFileTargets.begin(),
+        linuxFileTargets.end(),
+        [](const NativeTransferFormatCandidate& candidate) {
+            return candidate.native.nativeFormatName ==
+                   "x-special/mate-copied-files";
+        }));
+    assert(std::any_of(
+        linuxFileTargets.begin(),
+        linuxFileTargets.end(),
+        [](const NativeTransferFormatCandidate& candidate) {
+            return candidate.native.nativeFormatName == "text/x-moz-url";
+        }));
 }
 
 void identityTranscoderPassesCompatibleRepresentationsOnly()
@@ -167,6 +204,97 @@ void identityTranscoderPassesCompatibleRepresentationsOnly()
 
     request.sourceEncoding = TransferEncodingMode::NativePassthrough;
     request.targetEncoding = TransferEncodingMode::CanonicalBytes;
+    assert(!transcoder.canTranscode(request));
+    assert(transcoder.transcode(request).status ==
+           protocol::ResponseStatus::Unsupported);
+}
+
+void defaultTranscoderConvertsPasteSideNativeRepresentations()
+{
+    DefaultTransferTranscoder transcoder;
+
+    TransferTranscodeRequest request;
+    request.canonicalFormat = TextPlainUtf8Format;
+    request.sourceNative.platform = TransferPlatformFamily::Windows;
+    request.sourceNative.nativeFormatName = "CF_UNICODETEXT";
+    request.targetNative.platform = TransferPlatformFamily::Linux;
+    request.targetNative.nativeFormatName = "UTF8_STRING";
+    request.sourceEncoding = TransferEncodingMode::NativePassthrough;
+    request.targetEncoding = TransferEncodingMode::NativePassthrough;
+    request.bytes = {
+        'h', 0, 'i', 0, '\r', 0, '\n', 0, 0, 0};
+
+    assert(transcoder.canTranscode(request));
+    TransferTranscodeResult result = transcoder.transcode(request);
+    assert(result.ok());
+    assert(result.encoding == TransferEncodingMode::NativePassthrough);
+    assert(result.bytes == bytes("hi\n"));
+
+    request = {};
+    request.canonicalFormat = TextPlainUtf8Format;
+    request.targetNative.platform = TransferPlatformFamily::Windows;
+    request.targetNative.nativeFormatName = "CF_UNICODETEXT";
+    request.sourceEncoding = TransferEncodingMode::CanonicalBytes;
+    request.targetEncoding = TransferEncodingMode::NativePassthrough;
+    request.bytes = bytes("hi\n");
+    result = transcoder.transcode(request);
+    assert(result.ok());
+    assert((result.bytes ==
+            protocol::ByteBuffer{'h', 0, 'i', 0, '\r', 0, '\n', 0, 0, 0}));
+
+    request = {};
+    request.canonicalFormat = TextHtmlFormat;
+    request.sourceNative.platform = TransferPlatformFamily::Windows;
+    request.sourceNative.nativeFormatName = "HTML Format";
+    request.targetNative.platform = TransferPlatformFamily::Linux;
+    request.targetNative.nativeFormatName = "text/html";
+    request.sourceEncoding = TransferEncodingMode::NativePassthrough;
+    request.targetEncoding = TransferEncodingMode::NativePassthrough;
+    request.bytes =
+        bytes("<html><!--StartFragment--><b>x</b><!--EndFragment--></html>");
+    result = transcoder.transcode(request);
+    assert(result.ok());
+    assert(result.bytes == bytes("<b>x</b>"));
+
+    request = {};
+    request.canonicalFormat = TextHtmlFormat;
+    request.sourceEncoding = TransferEncodingMode::CanonicalBytes;
+    request.targetEncoding = TransferEncodingMode::NativePassthrough;
+    request.targetNative.platform = TransferPlatformFamily::Windows;
+    request.targetNative.nativeFormatName = "HTML Format";
+    request.bytes = bytes("<i>x</i>");
+    result = transcoder.transcode(request);
+    assert(result.ok());
+    assert(text(result.bytes).find("StartFragment:") != std::string::npos);
+    assert(text(result.bytes).find("<i>x</i>") != std::string::npos);
+
+    request = {};
+    request.canonicalFormat = TextRtfFormat;
+    request.sourceNative.platform = TransferPlatformFamily::Windows;
+    request.sourceNative.nativeFormatName = "Rich Text Format";
+    request.targetNative.platform = TransferPlatformFamily::Linux;
+    request.targetNative.nativeFormatName = "application/rtf";
+    request.sourceEncoding = TransferEncodingMode::NativePassthrough;
+    request.targetEncoding = TransferEncodingMode::NativePassthrough;
+    request.bytes = bytes("{\\rtf1 x}");
+    result = transcoder.transcode(request);
+    assert(result.ok());
+    assert(result.bytes == bytes("{\\rtf1 x}"));
+
+    request = {};
+    request.canonicalFormat = ImagePngFormat;
+    request.sourceNative.platform = TransferPlatformFamily::Windows;
+    request.sourceNative.nativeFormatName = "PNG";
+    request.targetNative.platform = TransferPlatformFamily::Linux;
+    request.targetNative.nativeFormatName = "image/png";
+    request.sourceEncoding = TransferEncodingMode::NativePassthrough;
+    request.targetEncoding = TransferEncodingMode::NativePassthrough;
+    request.bytes = {0x89, 'P', 'N', 'G'};
+    result = transcoder.transcode(request);
+    assert(result.ok());
+    assert((result.bytes == protocol::ByteBuffer{0x89, 'P', 'N', 'G'}));
+
+    request.sourceNative.nativeFormatName = "CF_DIB";
     assert(!transcoder.canTranscode(request));
     assert(transcoder.transcode(request).status ==
            protocol::ResponseStatus::Unsupported);
@@ -655,6 +783,7 @@ int main()
 {
     mapsNativeNamesThroughCanonicalRegistry();
     identityTranscoderPassesCompatibleRepresentationsOnly();
+    defaultTranscoderConvertsPasteSideNativeRepresentations();
     sourceRegistryEnforcesBundleIdentity();
     sourceRegistryRetainsLockedFileObjectsUntilUnlock();
     sourceRegistryRejectsStaleObjectLockIdentity();

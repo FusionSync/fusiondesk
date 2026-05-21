@@ -93,6 +93,10 @@ The old staged refactor notes, TODO logs, and interim SessionBus documents were 
    reads, stream rules, policy, audit, reconnect, and platform adapter
    boundaries.
 
+28. `LINUX_CLIPBOARD_IMPLEMENTATION_PLAN.md`
+   Linux clipboard endpoint plan based on the current clipboard module,
+   channel model, and `fuse-promise` Promise filesystem integration.
+
 ## Current Scope
 
 The first `FusionDesk` implementation slice is intentionally narrow:

@@ -5,6 +5,7 @@
 #include <QCoreApplication>
 #include <QElapsedTimer>
 #include <QEventLoop>
+#include <QMetaObject>
 #include <QTimer>
 
 namespace fusiondesk {
@@ -18,13 +19,15 @@ bool QtEventLoopBridge::hasApplication()
 
 bool QtEventLoopBridge::post(Task task)
 {
-    if (!task || !hasApplication())
+    QCoreApplication* application = QCoreApplication::instance();
+    if (!task || application == nullptr)
         return false;
 
-    QTimer::singleShot(0, [task = std::move(task)]() mutable {
-        task();
-    });
-    return true;
+    return QMetaObject::invokeMethod(application,
+                                     [task = std::move(task)]() mutable {
+                                         task();
+                                     },
+                                     Qt::QueuedConnection);
 }
 
 void QtEventLoopBridge::processOnce(std::uint32_t maxTimeMs)

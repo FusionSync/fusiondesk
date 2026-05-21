@@ -36,6 +36,7 @@ add_library(fusiondesk_core
     src/modules/clipboard/clipboard_transfer_file_list.cpp
     src/modules/clipboard/clipboard_transfer_format.cpp
     src/modules/clipboard/clipboard_transfer_registry.cpp
+    src/modules/clipboard/clipboard_transfer_transcoder.cpp
     src/modules/clipboard/clipboard_types.cpp
     src/modules/clipboard/fdcl_codec.cpp
     src/modules/clipboard/fdcl_codec_object_lock.cpp
@@ -1279,6 +1280,86 @@ if(APPLE)
         fusiondesk_macos_clipboard_endpoint_tests)
 endif()
 
+option(FUSIONDESK_BUILD_LINUX_CLIPBOARD_ADAPTER
+       "Build optional Linux clipboard adapter when clipbus is available" ON)
+
+if(UNIX AND NOT APPLE AND FUSIONDESK_BUILD_LINUX_CLIPBOARD_ADAPTER)
+    find_package(Clipbus QUIET)
+    if(TARGET Clipbus::Clipbus)
+        find_package(Threads QUIET)
+        find_package(PkgConfig QUIET)
+        if(PkgConfig_FOUND)
+            pkg_check_modules(FUSEPROMISE QUIET IMPORTED_TARGET fuse-promise)
+        endif()
+
+        add_library(fusiondesk_platform_linux_feature_adapters
+            src/platform/linux/clipboard/linux_clipboard_endpoint.cpp
+        )
+
+        target_include_directories(fusiondesk_platform_linux_feature_adapters
+            PUBLIC
+                ${CMAKE_CURRENT_SOURCE_DIR}/include
+        )
+
+        target_compile_features(fusiondesk_platform_linux_feature_adapters PUBLIC cxx_std_17)
+
+        target_link_libraries(fusiondesk_platform_linux_feature_adapters
+            PUBLIC
+                fusiondesk_core
+            PRIVATE
+                Clipbus::Clipbus
+        )
+
+        if(Threads_FOUND)
+            target_link_libraries(fusiondesk_platform_linux_feature_adapters
+                PRIVATE
+                    Threads::Threads
+            )
+        endif()
+
+        if(CMAKE_DL_LIBS)
+            target_link_libraries(fusiondesk_platform_linux_feature_adapters
+                PRIVATE
+                    ${CMAKE_DL_LIBS}
+            )
+        endif()
+
+        if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+            target_link_libraries(fusiondesk_platform_linux_feature_adapters
+                PRIVATE
+                    m
+            )
+        endif()
+
+        if(TARGET PkgConfig::FUSEPROMISE)
+            target_link_libraries(fusiondesk_platform_linux_feature_adapters
+                PRIVATE
+                    PkgConfig::FUSEPROMISE
+            )
+            target_compile_definitions(fusiondesk_platform_linux_feature_adapters
+                PRIVATE
+                    FUSIONDESK_HAS_FUSE_PROMISE=1
+            )
+        endif()
+
+        add_executable(fusiondesk_linux_clipboard_endpoint_tests
+            tests/platform/linux/feature/linux_clipboard_endpoint_smoke.cpp
+        )
+
+        target_link_libraries(fusiondesk_linux_clipboard_endpoint_tests
+            PRIVATE
+                fusiondesk_platform_linux_feature_adapters
+        )
+
+        add_test(
+            NAME fusiondesk_linux_clipboard_endpoint_tests
+            COMMAND fusiondesk_linux_clipboard_endpoint_tests
+        )
+        list(APPEND FUSIONDESK_TEST_TARGETS
+            fusiondesk_linux_clipboard_endpoint_tests)
+    endif()
+endif()
+
 option(FUSIONDESK_BUILD_QT_ADAPTERS "Build optional Qt adapters when Qt is available" ON)
 
 if(FUSIONDESK_BUILD_QT_ADAPTERS)
@@ -1661,6 +1742,17 @@ if(FUSIONDESK_BUILD_QT_ADAPTERS)
             target_compile_definitions(fusiondesk_pc_shell_common
                 PRIVATE
                     FUSIONDESK_PC_HAS_MACOS_FEATURE_ADAPTERS=1
+            )
+        endif()
+
+        if(TARGET fusiondesk_platform_linux_feature_adapters)
+            target_link_libraries(fusiondesk_pc_shell_common
+                PRIVATE
+                    fusiondesk_platform_linux_feature_adapters
+            )
+            target_compile_definitions(fusiondesk_pc_shell_common
+                PRIVATE
+                    FUSIONDESK_PC_HAS_LINUX_FEATURE_ADAPTERS=1
             )
         endif()
 

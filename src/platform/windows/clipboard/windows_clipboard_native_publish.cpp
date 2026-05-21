@@ -495,6 +495,110 @@ WindowsClipboardEndpoint::nativeSetRenderedTextWithOpenClipboard(
 #endif
 }
 
+protocol::ResponseStatus WindowsClipboardEndpoint::nativeSetRenderedTextBytes(
+    const protocol::ByteBuffer& cfUnicodeText)
+{
+    if (options_.dryRun) {
+        dryRunText_ =
+            bytesToString(canonicalUtf8FromWindowsCfUnicodeText(cfUnicodeText));
+        dryRunHtml_.clear();
+        dryRunRtf_.clear();
+        dryRunImagePng_.clear();
+        dryRunImageDib_.clear();
+        dryRunImageDibNativeFormatName_.clear();
+        dryRunImageDibFormatToken_ = 0;
+        dryRunFileList_ = {};
+        dryRunFilePaths_.clear();
+        dryRunFileGroupDescriptor_.clear();
+        ++dryRunSequence_;
+        return protocol::ResponseStatus::Ok;
+    }
+
+#if defined(_WIN32)
+    HANDLE textHandle = allocMoveableBytes(cfUnicodeText);
+    if (textHandle == nullptr) {
+        recordNativeFailure(GetLastError(), "GlobalAlloc failed for delayed raw CF_UNICODETEXT");
+        return protocol::ResponseStatus::Failed;
+    }
+
+    if (SetClipboardData(CF_UNICODETEXT, textHandle) == nullptr) {
+        const DWORD error = GetLastError();
+        GlobalFree(textHandle);
+        recordNativeFailure(error, "SetClipboardData delayed raw CF_UNICODETEXT render failed");
+        return protocol::ResponseStatus::Failed;
+    }
+
+    return protocol::ResponseStatus::Ok;
+#else
+    (void)cfUnicodeText;
+    return protocol::ResponseStatus::Unsupported;
+#endif
+}
+
+protocol::ResponseStatus
+WindowsClipboardEndpoint::nativeSetRenderedTextBytesWithOpenClipboard(
+    const protocol::ByteBuffer& cfUnicodeText)
+{
+    if (options_.dryRun) {
+        dryRunText_ =
+            bytesToString(canonicalUtf8FromWindowsCfUnicodeText(cfUnicodeText));
+        dryRunHtml_.clear();
+        dryRunRtf_.clear();
+        dryRunImagePng_.clear();
+        dryRunImageDib_.clear();
+        dryRunImageDibNativeFormatName_.clear();
+        dryRunImageDibFormatToken_ = 0;
+        dryRunFileList_ = {};
+        dryRunFilePaths_.clear();
+        dryRunFileGroupDescriptor_.clear();
+        ++dryRunSequence_;
+        return protocol::ResponseStatus::Ok;
+    }
+
+#if defined(_WIN32)
+    const HWND owner = clipboardOwnerWindow();
+    if (owner == nullptr) {
+        recordNativeFailure(GetLastError(), "clipboard owner window creation failed");
+        return protocol::ResponseStatus::Failed;
+    }
+    if (GetClipboardOwner() != owner)
+        return protocol::ResponseStatus::Conflict;
+
+    if (!tryOpenClipboard(owner,
+                          options_.openRetryCount,
+                          options_.openRetryDelayMs)) {
+        recordNativeFailure(GetLastError(), "OpenClipboard failed while rendering all delayed raw CF_UNICODETEXT formats");
+        return protocol::ResponseStatus::ChannelUnavailable;
+    }
+    if (GetClipboardOwner() != owner) {
+        CloseClipboard();
+        return protocol::ResponseStatus::Conflict;
+    }
+
+    HANDLE textHandle = allocMoveableBytes(cfUnicodeText);
+    if (textHandle == nullptr) {
+        const DWORD error = GetLastError();
+        CloseClipboard();
+        recordNativeFailure(error, "GlobalAlloc failed for WM_RENDERALLFORMATS raw CF_UNICODETEXT");
+        return protocol::ResponseStatus::Failed;
+    }
+
+    if (SetClipboardData(CF_UNICODETEXT, textHandle) == nullptr) {
+        const DWORD error = GetLastError();
+        GlobalFree(textHandle);
+        CloseClipboard();
+        recordNativeFailure(error, "SetClipboardData WM_RENDERALLFORMATS raw CF_UNICODETEXT failed");
+        return protocol::ResponseStatus::Failed;
+    }
+
+    CloseClipboard();
+    return protocol::ResponseStatus::Ok;
+#else
+    (void)cfUnicodeText;
+    return protocol::ResponseStatus::Unsupported;
+#endif
+}
+
 protocol::ResponseStatus WindowsClipboardEndpoint::nativeSetRenderedHtml(
     const protocol::ByteBuffer& canonicalHtml)
 {
@@ -605,6 +709,122 @@ WindowsClipboardEndpoint::nativeSetRenderedHtmlWithOpenClipboard(
     return protocol::ResponseStatus::Ok;
 #else
     (void)canonicalHtml;
+    return protocol::ResponseStatus::Unsupported;
+#endif
+}
+
+protocol::ResponseStatus WindowsClipboardEndpoint::nativeSetRenderedHtmlBytes(
+    const protocol::ByteBuffer& windowsHtml)
+{
+    if (options_.dryRun) {
+        dryRunHtml_ =
+            bytesToString(canonicalHtmlFromWindowsHtml(windowsHtml));
+        dryRunText_.clear();
+        dryRunRtf_.clear();
+        dryRunImagePng_.clear();
+        dryRunImageDib_.clear();
+        dryRunImageDibNativeFormatName_.clear();
+        dryRunImageDibFormatToken_ = 0;
+        dryRunFileList_ = {};
+        dryRunFilePaths_.clear();
+        dryRunFileGroupDescriptor_.clear();
+        ++dryRunSequence_;
+        return protocol::ResponseStatus::Ok;
+    }
+
+#if defined(_WIN32)
+    const UINT token = htmlFormat();
+    if (token == 0) {
+        recordNativeFailure(GetLastError(), "RegisterClipboardFormat(HTML Format) failed");
+        return protocol::ResponseStatus::Failed;
+    }
+
+    HANDLE htmlHandle = allocMoveableBytes(windowsHtml);
+    if (htmlHandle == nullptr) {
+        recordNativeFailure(GetLastError(), "GlobalAlloc failed for delayed raw HTML Format");
+        return protocol::ResponseStatus::Failed;
+    }
+
+    if (SetClipboardData(token, htmlHandle) == nullptr) {
+        const DWORD error = GetLastError();
+        GlobalFree(htmlHandle);
+        recordNativeFailure(error, "SetClipboardData delayed raw HTML Format render failed");
+        return protocol::ResponseStatus::Failed;
+    }
+
+    return protocol::ResponseStatus::Ok;
+#else
+    (void)windowsHtml;
+    return protocol::ResponseStatus::Unsupported;
+#endif
+}
+
+protocol::ResponseStatus
+WindowsClipboardEndpoint::nativeSetRenderedHtmlBytesWithOpenClipboard(
+    const protocol::ByteBuffer& windowsHtml)
+{
+    if (options_.dryRun) {
+        dryRunHtml_ =
+            bytesToString(canonicalHtmlFromWindowsHtml(windowsHtml));
+        dryRunText_.clear();
+        dryRunRtf_.clear();
+        dryRunImagePng_.clear();
+        dryRunImageDib_.clear();
+        dryRunImageDibNativeFormatName_.clear();
+        dryRunImageDibFormatToken_ = 0;
+        dryRunFileList_ = {};
+        dryRunFilePaths_.clear();
+        dryRunFileGroupDescriptor_.clear();
+        ++dryRunSequence_;
+        return protocol::ResponseStatus::Ok;
+    }
+
+#if defined(_WIN32)
+    const HWND owner = clipboardOwnerWindow();
+    if (owner == nullptr) {
+        recordNativeFailure(GetLastError(), "clipboard owner window creation failed");
+        return protocol::ResponseStatus::Failed;
+    }
+    if (GetClipboardOwner() != owner)
+        return protocol::ResponseStatus::Conflict;
+
+    const UINT token = htmlFormat();
+    if (token == 0) {
+        recordNativeFailure(GetLastError(), "RegisterClipboardFormat(HTML Format) failed");
+        return protocol::ResponseStatus::Failed;
+    }
+
+    if (!tryOpenClipboard(owner,
+                          options_.openRetryCount,
+                          options_.openRetryDelayMs)) {
+        recordNativeFailure(GetLastError(), "OpenClipboard failed while rendering all delayed raw HTML formats");
+        return protocol::ResponseStatus::ChannelUnavailable;
+    }
+    if (GetClipboardOwner() != owner) {
+        CloseClipboard();
+        return protocol::ResponseStatus::Conflict;
+    }
+
+    HANDLE htmlHandle = allocMoveableBytes(windowsHtml);
+    if (htmlHandle == nullptr) {
+        const DWORD error = GetLastError();
+        CloseClipboard();
+        recordNativeFailure(error, "GlobalAlloc failed for WM_RENDERALLFORMATS raw HTML Format");
+        return protocol::ResponseStatus::Failed;
+    }
+
+    if (SetClipboardData(token, htmlHandle) == nullptr) {
+        const DWORD error = GetLastError();
+        GlobalFree(htmlHandle);
+        CloseClipboard();
+        recordNativeFailure(error, "SetClipboardData WM_RENDERALLFORMATS raw HTML Format failed");
+        return protocol::ResponseStatus::Failed;
+    }
+
+    CloseClipboard();
+    return protocol::ResponseStatus::Ok;
+#else
+    (void)windowsHtml;
     return protocol::ResponseStatus::Unsupported;
 #endif
 }

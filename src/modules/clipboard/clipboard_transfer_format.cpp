@@ -82,7 +82,8 @@ std::string canonicalForNative(TransferPlatformFamily platform,
             return ImagePngFormat;
         if (name == "text/uri-list" ||
             name == "x-special/gnome-copied-files" ||
-            name == "x-special/mate-copied-files")
+            name == "x-special/mate-copied-files" ||
+            name == "text/x-moz-url")
             return FdclFileListFormat;
         break;
     case TransferPlatformFamily::MacOS:
@@ -256,6 +257,18 @@ DefaultTransferFormatMapper::nativeCandidates(
                                        "text/uri-list",
                                        TransferEncodingMode::Transcoded,
                                        100));
+            result.push_back(candidate(targetPlatform,
+                                       "x-special/gnome-copied-files",
+                                       TransferEncodingMode::Transcoded,
+                                       95));
+            result.push_back(candidate(targetPlatform,
+                                       "x-special/mate-copied-files",
+                                       TransferEncodingMode::Transcoded,
+                                       90));
+            result.push_back(candidate(targetPlatform,
+                                       "text/x-moz-url",
+                                       TransferEncodingMode::Transcoded,
+                                       80));
         }
         break;
     case TransferPlatformFamily::MacOS:

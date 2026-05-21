@@ -12,8 +12,10 @@
 
 #include <QCoreApplication>
 #include <QEventLoop>
+#include <QMetaObject>
 #include <QObject>
 #include <QString>
+#include <QThread>
 #include <QTimer>
 
 #include "fusiondesk/adapters/qt/qt_tcp_transport_socket.h"
@@ -27,8 +29,12 @@
 #if defined(FUSIONDESK_PC_HAS_MACOS_FEATURE_ADAPTERS)
 #include "fusiondesk/platform/macos/clipboard/mac_clipboard_endpoint.h"
 #endif
+#if defined(FUSIONDESK_PC_HAS_LINUX_FEATURE_ADAPTERS)
+#include "fusiondesk/platform/linux/clipboard/linux_clipboard_endpoint.h"
+#endif
 #include "fusiondesk/runtime/qt/qt_timer_bridge.h"
 #include "fusiondesk/runtime/qt/qt_transport_profile.h"
+#include "fusiondesk/runtime/qt/qt_event_loop_bridge.h"
 #include "fusiondesk/runtime/feature/clipboard_product_presenter.h"
 
 namespace fusiondesk {
@@ -51,6 +57,37 @@ std::string bytesToString(const protocol::ByteBuffer& bytes)
 {
     return std::string(bytes.begin(), bytes.end());
 }
+
+class QtClipboardCallbackDispatcher final
+    : public modules::clipboard::IClipboardCallbackDispatcher
+{
+public:
+    bool postClipboardTask(
+        modules::clipboard::ClipboardCallbackTask task) override
+    {
+        return runtime::qt::QtEventLoopBridge::post(std::move(task));
+    }
+
+    bool runClipboardTaskAndWait(
+        modules::clipboard::ClipboardCallbackTask task,
+        std::uint32_t) override
+    {
+        QCoreApplication* application = QCoreApplication::instance();
+        if (!task || application == nullptr)
+            return false;
+
+        if (application->thread() == QThread::currentThread()) {
+            task();
+            return true;
+        }
+
+        return QMetaObject::invokeMethod(application,
+                                         [task = std::move(task)]() mutable {
+                                             task();
+                                         },
+                                         Qt::BlockingQueuedConnection);
+    }
+};
 
 modules::clipboard::TransferReadResult readEndpointPlainText(
     modules::clipboard::IClipboardEndpoint& endpoint)
@@ -407,7 +444,8 @@ makeClipboardEndpoint(
 {
     const std::string endpointKind = clipboardEndpointKindOptionValue(argc, argv);
     if (endpointKind != "auto" && endpointKind != "windows" &&
-        endpointKind != "macos" && endpointKind != "qt") {
+        endpointKind != "macos" && endpointKind != "linux" &&
+        endpointKind != "qt") {
         writeShellError("unsupported clipboard endpoint: " + endpointKind);
         return nullptr;
     }
@@ -522,6 +560,51 @@ makeClipboardEndpoint(
     }
 #endif
 
+#if defined(FUSIONDESK_PC_HAS_LINUX_FEATURE_ADAPTERS)
+    if (endpointKind == "auto" || endpointKind == "linux") {
+        platform::linux_desktop::clipboard::LinuxClipboardEndpointOptions
+            options;
+        options.suppressOwnClipboardUpdates =
+            !hasArg(argc, argv, "--clipboard-no-owner-suppression");
+        options.maxInlineBytes = policy.maxInlineBytes;
+        options.maxFileRangeBytes = policy.maxFileRangeBytes;
+        options.maxSingleFileBytes = policy.maxSingleFileBytes;
+        options.maxFileCount =
+            uint32FromUint64(policy.maxFileCount, options.maxFileCount);
+        options.maxDirectoryDepth =
+            uint32FromUint64(
+                uint64OptionValue(argc,
+                                  argv,
+                                  "--clipboard-max-directory-depth",
+                                  options.maxDirectoryDepth),
+                options.maxDirectoryDepth);
+        options.expandDroppedDirectories =
+            !hasArg(argc, argv, "--clipboard-no-expand-directories");
+        const std::string ownerWindowName =
+            optionValue(argc, argv, "--clipboard-owner-window-name");
+        if (!ownerWindowName.empty())
+            options.ownerWindowName = ownerWindowName;
+        std::shared_ptr<modules::clipboard::IClipboardRemoteFileReader>
+            remoteFileReader =
+                std::dynamic_pointer_cast<
+                    modules::clipboard::IClipboardRemoteFileReader>(
+                    remoteReader);
+        std::shared_ptr<modules::clipboard::IClipboardRemoteObjectLocker>
+            remoteObjectLocker =
+                std::dynamic_pointer_cast<
+                    modules::clipboard::IClipboardRemoteObjectLocker>(
+                    remoteReader);
+        return std::make_shared<
+            platform::linux_desktop::clipboard::LinuxClipboardEndpoint>(
+            options,
+            std::move(remoteReader),
+            std::move(remoteFileReader),
+            std::move(remoteObjectLocker),
+            std::shared_ptr<modules::clipboard::ITransferTranscoder>{},
+            std::make_shared<QtClipboardCallbackDispatcher>());
+    }
+#endif
+
 #if defined(FUSIONDESK_PC_HAS_QT_FEATURE_ADAPTERS)
     if (endpointKind == "auto" || endpointKind == "qt") {
         adapters::qt::clipboard::QtClipboardEndpointOptions options;
@@ -566,6 +649,8 @@ makeClipboardEndpoint(
         writeShellError("clipboard endpoint windows is not available in this build");
     else if (endpointKind == "macos")
         writeShellError("clipboard endpoint macos is not available in this build");
+    else if (endpointKind == "linux")
+        writeShellError("clipboard endpoint linux is not available in this build");
     else if (endpointKind == "qt")
         writeShellError("clipboard endpoint qt is not available in this build");
     else
@@ -1489,6 +1574,17 @@ void writeClipboardDiagnosticsIfRequested(
                       << " staleOfferFailures=" << snapshot.staleOfferFailures
                       << " decodeFailures=" << snapshot.decodeFailures
                       << " sendFailures=" << snapshot.sendFailures
+                      << " readResponseMisses=" << snapshot.readResponseMisses
+                      << " lastReadRequest="
+                      << snapshot.lastReadRequestMessageId
+                      << " lastReadResponse="
+                      << snapshot.lastReadResponseMessageId
+                      << " lastReadResponseTo="
+                      << snapshot.lastReadResponseTo
+                      << " lastReadStatus="
+                      << snapshot.lastReadResponseStatus
+                      << " lastReadPayloadBytes="
+                      << snapshot.lastReadResponsePayloadBytes
                       << " pendingReads=" << snapshot.pendingReads
                       << " localOffer=" << snapshot.localBundle.offerId
                       << " remoteOffer=" << snapshot.remoteBundle.offerId
@@ -1562,6 +1658,63 @@ void writeClipboardDiagnosticsIfRequested(
                   << " pending=" << (diagnostics.nativeChangePending ? "true" : "false")
                   << " changeCount=" << diagnostics.lastNativeChangeCount
                   << " publishedOffer=" << diagnostics.publishedOfferId
+                  << " message=" << diagnostics.lastMessage
+                  << std::endl;
+    }
+#endif
+
+#if defined(FUSIONDESK_PC_HAS_LINUX_FEATURE_ADAPTERS)
+    auto linuxEndpoint =
+        std::dynamic_pointer_cast<
+            platform::linux_desktop::clipboard::LinuxClipboardEndpoint>(
+            endpoint);
+    if (linuxEndpoint != nullptr) {
+        const platform::linux_desktop::clipboard::LinuxClipboardEndpointDiagnostics
+            diagnostics = linuxEndpoint->diagnostics();
+        std::cout << "clipboard.endpoint"
+                  << " phase=" << phase
+                  << " kind=linux"
+                  << " started=" << (diagnostics.started ? "true" : "false")
+                  << " snapshots=" << diagnostics.snapshots
+                  << " publishes=" << diagnostics.publishes
+                  << " clears=" << diagnostics.clears
+                  << " delayedPublishes=" << diagnostics.delayedPublishes
+                  << " delayedRenders=" << diagnostics.delayedRenders
+                  << " streamChunks=" << diagnostics.streamChunks
+                  << " streamBytes=" << diagnostics.streamBytes
+                  << " targetListReads=" << diagnostics.targetListReads
+                  << " targetDataReads=" << diagnostics.targetDataReads
+                  << " targetReadFailures=" << diagnostics.targetReadFailures
+                  << " readFailures=" << diagnostics.readFailures
+                  << " fileListSnapshots=" << diagnostics.fileListSnapshots
+                  << " delayedRenderCacheHits="
+                  << diagnostics.delayedRenderCacheHits
+                  << " delayedRenderCacheStores="
+                  << diagnostics.delayedRenderCacheStores
+                  << " fusePromiseAvailable="
+                  << (diagnostics.fusePromiseAvailable ? "true" : "false")
+                  << " fusePromiseActive="
+                  << (diagnostics.fusePromiseActive ? "true" : "false")
+                  << " remoteFilePromisePublishes="
+                  << diagnostics.remoteFilePromisePublishes
+                  << " remoteFilePromiseFailures="
+                  << diagnostics.remoteFilePromiseFailures
+                  << " remoteFilePromiseReads="
+                  << diagnostics.remoteFilePromiseReads
+                  << " remoteFilePromiseReadFailures="
+                  << diagnostics.remoteFilePromiseReadFailures
+                  << " remoteFilePromiseReadBytes="
+                  << diagnostics.remoteFilePromiseReadBytes
+                  << " remoteFilePromiseProviders="
+                  << diagnostics.remoteFilePromiseProviders
+                  << " pending="
+                  << (diagnostics.nativeChangePending ? "true" : "false")
+                  << " notifications="
+                  << diagnostics.nativeChangeNotifications
+                  << " ownerLost=" << diagnostics.ownerLostNotifications
+                  << " ownerSuppressions=" << diagnostics.ownerSuppressions
+                  << " publishedOffer=" << diagnostics.publishedOfferId
+                  << " clipbusStatus=" << diagnostics.lastClipbusStatus
                   << " message=" << diagnostics.lastMessage
                   << std::endl;
     }

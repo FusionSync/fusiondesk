@@ -249,10 +249,18 @@ private:
         const protocol::ByteBuffer& canonicalUtf8);
     protocol::ResponseStatus nativeSetRenderedTextWithOpenClipboard(
         const protocol::ByteBuffer& canonicalUtf8);
+    protocol::ResponseStatus nativeSetRenderedTextBytes(
+        const protocol::ByteBuffer& cfUnicodeText);
+    protocol::ResponseStatus nativeSetRenderedTextBytesWithOpenClipboard(
+        const protocol::ByteBuffer& cfUnicodeText);
     protocol::ResponseStatus nativeSetRenderedHtml(
         const protocol::ByteBuffer& canonicalHtml);
     protocol::ResponseStatus nativeSetRenderedHtmlWithOpenClipboard(
         const protocol::ByteBuffer& canonicalHtml);
+    protocol::ResponseStatus nativeSetRenderedHtmlBytes(
+        const protocol::ByteBuffer& windowsHtml);
+    protocol::ResponseStatus nativeSetRenderedHtmlBytesWithOpenClipboard(
+        const protocol::ByteBuffer& windowsHtml);
     protocol::ResponseStatus nativeSetRenderedRtf(
         const protocol::ByteBuffer& canonicalRtf);
     protocol::ResponseStatus nativeSetRenderedRtfWithOpenClipboard(

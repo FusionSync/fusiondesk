@@ -98,6 +98,8 @@ protocol::ResponseStatus WindowsClipboardEndpoint::renderDelayedFormatForNative(
     ++diagnostics_.delayedRenders;
     if (html) {
         ++diagnostics_.htmlRenders;
+        if (result.encoding == TransferEncodingMode::NativePassthrough)
+            return nativeSetRenderedHtmlBytes(result.bytes);
         return nativeSetRenderedHtml(result.bytes);
     }
     if (rtf) {
@@ -117,6 +119,8 @@ protocol::ResponseStatus WindowsClipboardEndpoint::renderDelayedFormatForNative(
     }
     if (fileList)
         return nativeSetRenderedFileList(result.bytes);
+    if (result.encoding == TransferEncodingMode::NativePassthrough)
+        return nativeSetRenderedTextBytes(result.bytes);
     return nativeSetRenderedText(result.bytes);
 }
 
@@ -130,7 +134,9 @@ protocol::ResponseStatus WindowsClipboardEndpoint::renderAllDelayedFormatsForNat
 
     TransferReadResult text = readBestText(publishedBundle_);
     if (text.ok() &&
-        nativeSetRenderedTextWithOpenClipboard(text.bytes) ==
+        (text.encoding == TransferEncodingMode::NativePassthrough
+             ? nativeSetRenderedTextBytesWithOpenClipboard(text.bytes)
+             : nativeSetRenderedTextWithOpenClipboard(text.bytes)) ==
             protocol::ResponseStatus::Ok) {
         ++rendered;
     } else if (!text.ok()) {
@@ -139,7 +145,9 @@ protocol::ResponseStatus WindowsClipboardEndpoint::renderAllDelayedFormatsForNat
 
     TransferReadResult html = readBestHtml(publishedBundle_);
     if (html.ok() &&
-        nativeSetRenderedHtmlWithOpenClipboard(html.bytes) ==
+        (html.encoding == TransferEncodingMode::NativePassthrough
+             ? nativeSetRenderedHtmlBytesWithOpenClipboard(html.bytes)
+             : nativeSetRenderedHtmlWithOpenClipboard(html.bytes)) ==
             protocol::ResponseStatus::Ok) {
         ++rendered;
         ++diagnostics_.htmlRenders;

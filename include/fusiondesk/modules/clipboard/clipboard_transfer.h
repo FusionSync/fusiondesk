@@ -343,6 +343,14 @@ public:
         const TransferTranscodeRequest& request) const override;
 };
 
+class DefaultTransferTranscoder : public ITransferTranscoder
+{
+public:
+    bool canTranscode(const TransferTranscodeRequest& request) const override;
+    TransferTranscodeResult transcode(
+        const TransferTranscodeRequest& request) const override;
+};
+
 struct TransferSourceLookup
 {
     protocol::ResponseStatus status = protocol::ResponseStatus::NotFound;

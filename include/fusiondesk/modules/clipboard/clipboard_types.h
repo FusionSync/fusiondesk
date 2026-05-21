@@ -2,6 +2,7 @@
 #define FUSIONDESK_MODULES_CLIPBOARD_CLIPBOARD_TYPES_H
 
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
@@ -21,6 +22,7 @@ using TransferObjectId = std::uint64_t;
 using TransferObjectLockId = std::uint64_t;
 using DragSessionId = std::uint64_t;
 using PolicyVersion = std::uint64_t;
+using ClipboardCallbackTask = std::function<void()>;
 
 constexpr const char* TextPlainUtf8Format = "text/plain;charset=utf-8";
 constexpr const char* TextHtmlFormat = "text/html";
@@ -118,6 +120,16 @@ struct TransferReadResult
     {
         return status == protocol::ResponseStatus::Ok;
     }
+};
+
+class IClipboardCallbackDispatcher
+{
+public:
+    virtual ~IClipboardCallbackDispatcher() = default;
+
+    virtual bool postClipboardTask(ClipboardCallbackTask task) = 0;
+    virtual bool runClipboardTaskAndWait(ClipboardCallbackTask task,
+                                         std::uint32_t timeoutMs) = 0;
 };
 
 class TransferSource

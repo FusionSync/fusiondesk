@@ -338,6 +338,22 @@ void clipboardEndpointSelectionOptionsAreStable()
     assert(!fusiondesk::apps::pc::qtClipboardEndpointRequested(
         static_cast<int>(macArgv.size()),
         macArgv.data()));
+
+    std::vector<std::string> linuxArgs = {
+        "fusiondesk_pc_feature_adapter_startup_smoke",
+        "--clipboard-endpoint",
+        "linux",
+    };
+    std::vector<char*> linuxArgv;
+    linuxArgv.reserve(linuxArgs.size());
+    for (std::string& arg : linuxArgs)
+        linuxArgv.push_back(arg.data());
+    assert(fusiondesk::apps::pc::clipboardEndpointKindOptionValue(
+               static_cast<int>(linuxArgv.size()),
+               linuxArgv.data()) == "linux");
+    assert(!fusiondesk::apps::pc::qtClipboardEndpointRequested(
+        static_cast<int>(linuxArgv.size()),
+        linuxArgv.data()));
 }
 
 void clipboardOptionsPopulateRuntimeProductPolicy()

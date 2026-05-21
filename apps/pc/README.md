@@ -63,7 +63,8 @@ fusiondesk_pc_profile_plan: pre-start tool that writes paired client/agent TCP p
 --mount-input: add input.mouse and input.keyboard profile modules and feature adapter dependencies
 --start-clipboard: wait for required module channels, then start clipboard modules
 --pump-clipboard: start the pure ClipboardRuntimeService owner for endpoint snapshots and remote reads
---clipboard-endpoint <auto|windows|macos|qt>: select the PC clipboard endpoint adapter; auto keeps the native OS endpoint as the default where one is linked and falls back to Qt where that is the linked adapter
+--clipboard-endpoint <auto|windows|macos|linux|qt>: select the PC clipboard endpoint adapter; auto keeps the native OS endpoint as the default where one is linked and falls back to Qt where that is the linked adapter
+--clipboard-owner-window-name <text>: set the native owner window name for endpoints that expose one, including the Linux X11/clipbus endpoint
 --clipboard-dry-run-text <text>: seed the Windows clipboard endpoint dry-run store before clipboard startup
 --clipboard-seed-text <text>: publish a local text bundle through the selected clipboard endpoint before clipboard startup
 --clipboard-seed-html-file <path>: publish a local canonical text/html bundle through the selected clipboard endpoint before clipboard startup
@@ -117,6 +118,21 @@ file or directory from the remote peer through FDCL
 LockObject/FileRange/UnlockObject only when the local target app fulfills the
 promise. Diagnostics are printed as `clipboard.endpoint kind=macos` rows and
 include promise publication/provider counters.
+The Linux endpoint uses the external `clipbus` X11/XCB backend directly, with
+no Qt GUI dependency. It snapshots X11 `TARGETS`, reads `UTF8_STRING`,
+`text/plain;charset=utf-8`, `text/html`, `text/rtf`, `image/png`, and local
+`text/uri-list`/GNOME file URI lists, and publishes remote text/rich/image
+offers as promised X11 targets. When a local X11 app requests a delayed remote
+target, the endpoint feeds `clipbus` through the streaming INCR path.
+Remote-file clipboard publication uses the optional `fuse-promise` library when
+it is linked: the X11 clipboard receives `text/uri-list`,
+`x-special/gnome-copied-files`, `x-special/mate-copied-files`,
+`text/x-moz-url`, and old Nautilus-compatible `UTF8_STRING` targets that point
+at the promise filesystem, and file bytes are fetched through FDCL
+LockObject/FileRange/UnlockObject when the local target app opens the promised
+path. Without `fuse-promise`, remote file-list publication returns
+`Unsupported` while ordinary clipboard formats still work. Diagnostics are
+printed as `clipboard.endpoint kind=linux` rows.
 The Windows endpoint carries `CF_UNICODETEXT`, `HTML Format`,
 `Rich Text Format`, registered `PNG`, CF_DIB/CF_DIBV5 image data,
 CF_HDROP/local file-list snapshots, and remote FileGroupDescriptor/FileContents

@@ -28,6 +28,17 @@ std::uint64_t monotonicNowUsec()
             .count());
 }
 
+bool descriptorMatchesNativeTarget(
+    const TransferFormatDescriptor& descriptor,
+    const std::string& nativeFormatName,
+    std::uint32_t localFormatToken)
+{
+    return (!nativeFormatName.empty() &&
+            descriptor.nativeFormatName == nativeFormatName) ||
+           (localFormatToken != 0 &&
+            descriptor.localFormatToken == localFormatToken);
+}
+
 } // namespace
 
 ClipboardSnapshot WindowsClipboardEndpoint::snapshotFromCanonicalText(
@@ -473,14 +484,43 @@ TransferReadResult WindowsClipboardEndpoint::readBestFormat(
             }
 
             if (result.encoding == TransferEncodingMode::NativePassthrough &&
-                descriptor.nativeFormatName == WindowsUnicodeTextName) {
-                result.bytes = canonicalUtf8FromWindowsCfUnicodeText(result.bytes);
-                result.encoding = TransferEncodingMode::CanonicalBytes;
+                descriptorMatchesNativeTarget(descriptor,
+                                              nativeFormatName,
+                                              localFormatToken)) {
+                if (result.canonicalFormat.empty())
+                    result.canonicalFormat = canonicalFormat;
+                return result;
             }
-            if (result.encoding == TransferEncodingMode::NativePassthrough &&
-                descriptor.nativeFormatName == WindowsHtmlName) {
-                result.bytes = canonicalHtmlFromWindowsHtml(result.bytes);
-                result.encoding = TransferEncodingMode::CanonicalBytes;
+
+            if (result.encoding != TransferEncodingMode::CanonicalBytes) {
+                TransferTranscodeRequest transcodeRequest;
+                transcodeRequest.canonicalFormat = canonicalFormat;
+                transcodeRequest.sourceNative.platform =
+                    TransferPlatformFamily::Windows;
+                transcodeRequest.sourceNative.nativeFormatName =
+                    descriptor.nativeFormatName;
+                transcodeRequest.sourceNative.localFormatToken =
+                    descriptor.localFormatToken;
+                transcodeRequest.targetNative = transcodeRequest.sourceNative;
+                transcodeRequest.sourceEncoding = result.encoding;
+                transcodeRequest.targetEncoding =
+                    TransferEncodingMode::CanonicalBytes;
+                transcodeRequest.bytes = std::move(result.bytes);
+
+                DefaultTransferTranscoder transcoder;
+                if (transcoder.canTranscode(transcodeRequest)) {
+                    const TransferTranscodeResult transcoded =
+                        transcoder.transcode(transcodeRequest);
+                    if (!transcoded.ok()) {
+                        failure.status = transcoded.status;
+                        failure.message = transcoded.message;
+                        continue;
+                    }
+                    result.bytes = transcoded.bytes;
+                    result.encoding = transcoded.encoding;
+                } else {
+                    result.bytes = std::move(transcodeRequest.bytes);
+                }
             }
             if (result.canonicalFormat.empty())
                 result.canonicalFormat = canonicalFormat;

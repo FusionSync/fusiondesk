@@ -107,7 +107,14 @@ struct ClipboardModuleSnapshot
     DragSessionId activeLocalDragSessionId = 0;
     DragSessionId activeRemoteDragSessionId = 0;
     std::size_t pendingReads = 0;
+    protocol::MessageId lastReadRequestMessageId = 0;
+    protocol::MessageId lastReadResponseMessageId = 0;
+    protocol::MessageId lastReadResponseCorrelationId = 0;
     protocol::MessageId lastReadResponseTo = 0;
+    int readResponseMisses = 0;
+    int lastReadResponseKind = 0;
+    int lastReadResponseStatus = 0;
+    std::size_t lastReadResponsePayloadBytes = 0;
     protocol::MessageId lastFileRangeResponseTo = 0;
     protocol::MessageId lastObjectLockResponseTo = 0;
     protocol::MessageId lastObjectUnlockResponseTo = 0;

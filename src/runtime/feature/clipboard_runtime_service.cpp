@@ -1,5 +1,7 @@
 #include "fusiondesk/runtime/feature/clipboard_runtime_service.h"
 
+#include <chrono>
+#include <thread>
 #include <utility>
 
 #include "fusiondesk/core/module/module_host.h"
@@ -31,6 +33,11 @@ bool sameSnapshot(const ClipboardRuntimeServiceSnapshot& left,
            left.lastOfferId == right.bundle.offerId &&
            left.lastOwnerEpoch == right.bundle.ownerEpoch &&
            left.lastSequence == right.bundle.sequence;
+}
+
+void pauseClipboardReadPoll()
+{
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
 }
 
 modules::clipboard::FdclReadFormatRequest fdclReadRequestFromTransfer(
@@ -179,9 +186,7 @@ ClipboardRuntimeRemoteReader::readRemoteFormat(
     }
 
     std::uint64_t nowUsec = startUsec;
-    for (std::uint32_t iteration = 0;
-         iteration < 10000 && nowUsec <= deadlineUsec;
-         ++iteration) {
+    while (nowUsec <= deadlineUsec) {
         options_.pump->pumpOnce();
         nowUsec = options_.pump->monotonicNowUsec();
         module->expirePendingReads(nowUsec);
@@ -213,6 +218,8 @@ ClipboardRuntimeRemoteReader::readRemoteFormat(
             if (current.pendingReads <= before.pendingReads)
                 break;
         }
+        if (nowUsec < deadlineUsec)
+            pauseClipboardReadPoll();
     }
 
     module->expirePendingReads(deadlineUsec + 1);
@@ -317,9 +324,7 @@ ClipboardRuntimeRemoteReader::readRemoteFileRange(
     }
 
     std::uint64_t nowUsec = startUsec;
-    for (std::uint32_t iteration = 0;
-         iteration < 10000 && nowUsec <= deadlineUsec;
-         ++iteration) {
+    while (nowUsec <= deadlineUsec) {
         options_.pump->pumpOnce();
         nowUsec = options_.pump->monotonicNowUsec();
         module->expirePendingReads(nowUsec);
@@ -351,6 +356,8 @@ ClipboardRuntimeRemoteReader::readRemoteFileRange(
             if (current.pendingReads <= before.pendingReads)
                 break;
         }
+        if (nowUsec < deadlineUsec)
+            pauseClipboardReadPoll();
     }
 
     module->expirePendingReads(deadlineUsec + 1);

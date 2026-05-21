@@ -85,6 +85,7 @@ ClipboardModuleBase::requestRemoteFormatTracked(
     }
 
     result.messageId = packet.messageId;
+    snapshot_.lastReadRequestMessageId = packet.messageId;
     if (sendPacket(packet)) {
         ++snapshot_.readRequestsSent;
         snapshot_.pendingReads = readRequests_.pendingCount();
@@ -282,8 +283,16 @@ void ClipboardModuleBase::handleFileRangeRequest(
 void ClipboardModuleBase::handleReadResponse(
     const protocol::PacketEnvelope& packet)
 {
-    if (!readRequests_.complete(packet))
+    snapshot_.lastReadResponseMessageId = packet.messageId;
+    snapshot_.lastReadResponseCorrelationId = packet.correlationId;
+    snapshot_.lastReadResponseTo = packet.responseTo;
+    snapshot_.lastReadResponseKind = static_cast<int>(packet.messageKind);
+    snapshot_.lastReadResponseStatus = static_cast<int>(packet.responseStatus);
+    snapshot_.lastReadResponsePayloadBytes = packet.payload.size();
+    if (!readRequests_.complete(packet)) {
+        ++snapshot_.readResponseMisses;
         ++snapshot_.decodeFailures;
+    }
     snapshot_.pendingReads = readRequests_.pendingCount();
 }
 

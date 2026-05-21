@@ -144,7 +144,7 @@ ClipboardModuleBase::ClipboardModuleBase(module::ModuleManifest manifest,
     if (dependencies_.formatMapper == nullptr)
         dependencies_.formatMapper = std::make_shared<DefaultTransferFormatMapper>();
     if (dependencies_.transcoder == nullptr)
-        dependencies_.transcoder = std::make_shared<IdentityTransferTranscoder>();
+        dependencies_.transcoder = std::make_shared<DefaultTransferTranscoder>();
 
     snapshot_.moduleId = manifest_.moduleId;
 }
@@ -379,7 +379,12 @@ std::string ClipboardModuleBase::diagnostics() const
            " pendingLargeDataResponses=" + std::to_string(snapshot_.pendingLargeDataResponses) +
            " staleOfferFailures=" + std::to_string(snapshot_.staleOfferFailures) +
            " timeoutFailures=" + std::to_string(snapshot_.timeoutFailures) +
-           " decodeFailures=" + std::to_string(snapshot_.decodeFailures);
+           " decodeFailures=" + std::to_string(snapshot_.decodeFailures) +
+           " readResponseMisses=" + std::to_string(snapshot_.readResponseMisses) +
+           " lastReadRequest=" + std::to_string(snapshot_.lastReadRequestMessageId) +
+           " lastReadResponse=" + std::to_string(snapshot_.lastReadResponseMessageId) +
+           " lastReadResponseTo=" + std::to_string(snapshot_.lastReadResponseTo) +
+           " lastReadStatus=" + std::to_string(snapshot_.lastReadResponseStatus);
 }
 
 bool ClipboardModuleBase::announceLocalSnapshot()
