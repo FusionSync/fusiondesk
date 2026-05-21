@@ -7,6 +7,7 @@
 **A modular remote desktop runtime for display, input, clipboard, file transfer, policy, and diagnostics.**
 
 [![Release](https://github.com/FusionSync/fusiondesk/actions/workflows/fusiondesk-release.yml/badge.svg)](https://github.com/FusionSync/fusiondesk/actions/workflows/fusiondesk-release.yml)
+[![Docs](https://github.com/FusionSync/fusiondesk/actions/workflows/docs.yml/badge.svg)](https://github.com/FusionSync/fusiondesk/actions/workflows/docs.yml)
 ![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus&logoColor=white)
 ![CMake](https://img.shields.io/badge/build-CMake-064F8C?logo=cmake&logoColor=white)
 ![Qt](https://img.shields.io/badge/UI-Qt-41CD52?logo=qt&logoColor=white)
@@ -93,8 +94,16 @@ VERSION=dev PLATFORM=linux-x86_64 BUILD_DIR=build CONFIGURATION=Release OUTPUT_D
 
 ## Documentation
 
+The MkDocs documentation site is published through GitHub Pages:
+
+<https://fusionsync.github.io/fusiondesk/>
+
 | Topic | Document |
 | --- | --- |
+| Documentation site source | [`mkdocs.yml`](mkdocs.yml) |
+| Getting started | [`docs/getting-started.md`](docs/getting-started.md) |
+| PC shell usage | [`docs/usage/pc-shell.md`](docs/usage/pc-shell.md) |
+| Clipboard redirection guide | [`docs/features/clipboard.md`](docs/features/clipboard.md) |
 | Architecture overview | [`docs/architecture/FUSIONDESK_ARCHITECTURE.md`](docs/architecture/FUSIONDESK_ARCHITECTURE.md) |
 | Network model | [`docs/architecture/NETWORK_MODEL.md`](docs/architecture/NETWORK_MODEL.md) |
 | Protocol pattern | [`docs/architecture/PROTOCOL_MESSAGE_PATTERN.md`](docs/architecture/PROTOCOL_MESSAGE_PATTERN.md) |

@@ -1,0 +1,101 @@
+site_name: FusionDesk
+site_description: FusionDesk remote desktop runtime documentation
+site_url: https://fusionsync.github.io/fusiondesk/
+repo_url: https://github.com/FusionSync/fusiondesk
+repo_name: FusionSync/fusiondesk
+edit_uri: edit/master/docs/
+
+theme:
+  name: material
+  language: zh
+  logo: assets/fusiondesk-architecture.svg
+  favicon: assets/fusiondesk-architecture.svg
+  features:
+    - navigation.instant
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - content.action.edit
+    - search.highlight
+    - search.suggest
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: cyan
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: cyan
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+plugins:
+  - search:
+      lang:
+        - en
+        - zh
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - toc:
+      permalink: true
+
+nav:
+  - 首页: index.md
+  - 快速开始:
+      - 构建与测试: getting-started.md
+      - PC Shell 使用: usage/pc-shell.md
+  - 功能:
+      - 剪切板重定向: features/clipboard.md
+  - 开发:
+      - 构建、测试与边界: development/build-and-test.md
+      - GitHub Pages 文档发布: deployment/github-pages.md
+  - 架构:
+      - 架构索引: architecture/README.md
+      - 产品路线图: architecture/PRODUCT_ROADMAP.md
+      - 总体架构: architecture/FUSIONDESK_ARCHITECTURE.md
+      - 项目启动方法: architecture/FUSIONDESK_PROJECT_INIT_METHOD.md
+      - 当前实现基线: architecture/FUSIONDESK_IMPLEMENTATION_BASELINE.md
+      - 最小主线: architecture/FUSIONDESK_MINIMAL_VERSION_MAINLINE.md
+      - 最小版本 Runbook: architecture/FUSIONDESK_MINIMAL_VERSION_RUNBOOK.md
+      - 目录布局: architecture/FUSIONDESK_DIRECTORY_LAYOUT.md
+      - 模块与接口蓝图: architecture/MODULE_AND_INTERFACE_BLUEPRINT.md
+      - Session 模型: architecture/SESSION_MODEL.md
+      - Runtime 与 Session Manager: architecture/RUNTIME_HOST_AND_SESSION_MANAGER_DESIGN.md
+      - 网络模型: architecture/NETWORK_MODEL.md
+      - 网络通道与调度: architecture/NETWORK_CHANNEL_REGISTRY_AND_SCHEDULER.md
+      - 协议消息模式: architecture/PROTOCOL_MESSAGE_PATTERN.md
+      - 显示模块设计: architecture/DISPLAY_MODULE_DESIGN.md
+      - 显示流水线设计: architecture/DISPLAY_SCREEN_PIPELINE_DESIGN.md
+      - 剪切板基础: architecture/CLIPBOARD_REDIRECTION_FOUNDATION.md
+      - Linux 剪切板计划: architecture/LINUX_CLIPBOARD_IMPLEMENTATION_PLAN.md
+      - Qt 边界: architecture/QT_BOUNDARY.md
+      - 平台目标: architecture/PLATFORM_TARGETS.md
+      - Android Controller: architecture/ANDROID_CONTROLLER_LIBRARY.md
+      - ABI 与工具链矩阵: architecture/ABI_AND_TOOLCHAIN_MATRIX.md
+      - C4 视图: architecture/C4_ARCHITECTURE_VIEWS.md
+      - 交付与打包: architecture/DELIVERY_AND_PACKAGING.md
+      - Stage Gates: architecture/FUSIONDESK_STAGE_GATES.md
+      - 自动执行计划: architecture/GOAL_AUTOPILOT_PLAN.md
+      - 重建计划: architecture/FUSIONDESK_REBUILD_PLAN.md
+      - TODO Tracker: architecture/FUSIONDESK_TODO_TRACKER.md
+      - ADR:
+          - 模板: architecture/adr/0000-template.md
+          - Layered rebuild: architecture/adr/0001-use-fusiondesk-layered-rebuild.md
+          - Core pure C++: architecture/adr/0002-keep-core-pure-cpp.md
+          - Multi-channel network: architecture/adr/0003-use-multi-socket-multi-channel-network.md
+          - CMake: architecture/adr/0004-use-cmake-for-fusiondesk.md
+          - Legacy as reference: architecture/adr/0005-treat-legacy-source-as-reference-only.md
