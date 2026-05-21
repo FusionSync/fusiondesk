@@ -16,6 +16,12 @@ on:
   push:
     branches:
       - master
+    paths-ignore:
+      - '.github/workflows/docs.yml'
+      - 'README.md'
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'requirements-docs.txt'
     tags:
       - 'v*'
       - 'V*'
