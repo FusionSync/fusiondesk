@@ -20,6 +20,8 @@ on:
 
 permissions:
   contents: read
+  pages: write
+  id-token: write
 
 concurrency:
   group: pages-${{ github.ref }}
@@ -29,6 +31,8 @@ jobs:
   build:
     name: Build MkDocs site
     runs-on: ubuntu-22.04
+    outputs:
+      pages_enabled: ${{ steps.pages.outputs.enabled }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -46,20 +50,36 @@ jobs:
       - name: Build documentation
         run: mkdocs build --strict
 
-      - name: Upload Pages artifact
+      - name: Check GitHub Pages configuration
+        id: pages
         if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if build_type="$(gh api "repos/${GITHUB_REPOSITORY}/pages" --jq '.build_type' 2>/dev/null)"; then
+            if [[ "$build_type" == "workflow" ]]; then
+              echo "enabled=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "::notice::GitHub Pages is enabled, but Source is not GitHub Actions. Set Settings -> Pages -> Build and deployment -> Source to GitHub Actions."
+          else
+            echo "::notice::GitHub Pages is not enabled for this repository yet. Set Settings -> Pages -> Build and deployment -> Source to GitHub Actions."
+          fi
+          echo "enabled=false" >> "$GITHUB_OUTPUT"
+
+      - name: Upload Pages artifact
+        if: github.event_name != 'pull_request' && steps.pages.outputs.enabled == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: site
 
   deploy:
     name: Deploy GitHub Pages
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && needs.build.outputs.pages_enabled == 'true'
     needs: build
     runs-on: ubuntu-22.04
-    permissions:
-      pages: write
-      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
