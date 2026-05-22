@@ -1665,6 +1665,7 @@ if(FUSIONDESK_BUILD_QT_ADAPTERS)
             apps/pc/common/pc_clipboard_policy_file.cpp
             apps/pc/common/pc_clipboard_shell.cpp
             apps/pc/common/pc_display_diagnostics.cpp
+            apps/pc/common/pc_option_registry.cpp
             apps/pc/common/pc_profile_dependencies.cpp
             apps/pc/common/pc_profile_options.cpp
             apps/pc/common/pc_product_session_controller.cpp
@@ -1816,6 +1817,10 @@ if(FUSIONDESK_BUILD_QT_ADAPTERS)
             tests/apps/pc/pc_product_session_controller_smoke.cpp
         )
 
+        add_executable(fusiondesk_pc_option_registry_smoke
+            tests/apps/pc/pc_option_registry_smoke.cpp
+        )
+
         target_compile_definitions(fusiondesk_pc_profile_plan_smoke
             PRIVATE
                 FUSIONDESK_PC_PROFILE_PLAN_EXE="$<TARGET_FILE:fusiondesk_pc_profile_plan>"
@@ -1836,6 +1841,11 @@ if(FUSIONDESK_BUILD_QT_ADAPTERS)
             PRIVATE
                 fusiondesk_pc_shell_common
                 ${FUSIONDESK_QT_LIBS}
+        )
+
+        target_link_libraries(fusiondesk_pc_option_registry_smoke
+            PRIVATE
+                fusiondesk_pc_shell_common
         )
 
         if(TARGET fusiondesk_platform_windows_feature_adapters)
@@ -2163,6 +2173,7 @@ if(FUSIONDESK_BUILD_QT_ADAPTERS)
         add_test(NAME fusiondesk_pc_profile_plan_smoke COMMAND fusiondesk_pc_profile_plan_smoke)
         add_test(NAME fusiondesk_pc_feature_adapter_startup_smoke COMMAND fusiondesk_pc_feature_adapter_startup_smoke)
         add_test(NAME fusiondesk_pc_product_session_controller_tests COMMAND fusiondesk_pc_product_session_controller_tests)
+        add_test(NAME fusiondesk_pc_option_registry_smoke COMMAND fusiondesk_pc_option_registry_smoke)
         if(TARGET fusiondesk_platform_windows_display AND TARGET fusiondesk_qt_display_adapters)
             add_executable(fusiondesk_pc_agent_start_display_requires_ready_channel_smoke
                 tests/apps/pc/pc_agent_start_display_requires_ready_channel_smoke.cpp
@@ -2259,7 +2270,8 @@ if(FUSIONDESK_BUILD_QT_ADAPTERS)
             fusiondesk_pc_agent_listen_profile_smoke
             fusiondesk_pc_profile_plan_smoke
             fusiondesk_pc_feature_adapter_startup_smoke
-            fusiondesk_pc_product_session_controller_tests)
+            fusiondesk_pc_product_session_controller_tests
+            fusiondesk_pc_option_registry_smoke)
     else()
         message(STATUS "Qt adapters disabled because Qt Core/Network was not found")
     endif()

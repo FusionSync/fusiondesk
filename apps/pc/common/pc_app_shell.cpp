@@ -4,6 +4,7 @@
 #include "pc_clipboard_policy_file.h"
 #include "pc_clipboard_shell.h"
 #include "pc_display_diagnostics.h"
+#include "pc_option_registry.h"
 #include "pc_profile_dependencies.h"
 #include "pc_profile_options.h"
 #include "pc_runtime_exchange_shell.h"
@@ -719,6 +720,27 @@ bool sendClipboardDragDropIfRequested(
 
 int runPcShell(int argc, char** argv, PcShellRole role)
 {
+    if (pcShellHelpRequested(argc, argv)) {
+        writePcShellHelp(std::cout,
+                         applicationName(role),
+                         hasArg(argc, argv, "--help-all"));
+        return 0;
+    }
+
+    if (pcShellGuiConfigModelRequested(argc, argv)) {
+        writePcShellGuiConfigModelJson(std::cout);
+        return 0;
+    }
+
+    const PcOptionValidationResult validation =
+        validatePcShellOptions(argc, argv);
+    if (!validation.ok) {
+        writeShellMessages(validation.messages);
+        writeShellError(std::string("Run ") + applicationName(role) +
+                        " --help for supported options.");
+        return 2;
+    }
+
 #if defined(FUSIONDESK_PC_HAS_QT_WIDGET_DISPLAY) || \
     defined(FUSIONDESK_PC_HAS_QT_FEATURE_ADAPTERS)
     std::unique_ptr<QCoreApplication> applicationOwner;

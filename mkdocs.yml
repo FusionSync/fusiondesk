@@ -58,6 +58,7 @@ nav:
   - 快速开始:
       - 构建与测试: getting-started.md
       - PC Shell 使用: usage/pc-shell.md
+      - PC Shell 参数模型: usage/pc-shell-options.md
   - 功能:
       - 剪切板重定向: features/clipboard.md
   - 开发:

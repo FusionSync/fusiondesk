@@ -8,6 +8,9 @@ FusionDesk 当前提供三个 PC shell 可执行目标：
 | `fusiondesk_pc_agent` | 启动 agent session，监听 profile 中声明的通道。 |
 | `fusiondesk_pc_client` | 启动 client session，连接 agent profile。 |
 
+完整参数分层、可见性和 GUI 配置模型见
+[PC Shell 参数模型](pc-shell-options.md)。
+
 ## 生成本地 profile
 
 ```bash

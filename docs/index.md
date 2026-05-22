@@ -10,6 +10,7 @@ FusionDesk 是一个模块化远程桌面运行时，目标是把显示、输入
 | --- | --- |
 | 本地构建和跑测试 | [构建与测试](getting-started.md) |
 | 启动 PC client/agent shell | [PC Shell 使用](usage/pc-shell.md) |
+| 查看 PC shell 参数和 GUI 配置模型 | [PC Shell 参数模型](usage/pc-shell-options.md) |
 | 理解剪切板重定向 | [剪切板重定向](features/clipboard.md) |
 | 维护文档站发布 | [GitHub Pages 文档发布](deployment/github-pages.md) |
 | 阅读完整架构 | [架构索引](architecture/README.md) |
