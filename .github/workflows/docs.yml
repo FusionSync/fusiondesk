@@ -48,6 +48,14 @@ jobs:
       - name: Build documentation
         run: mkdocs build --strict
 
+      - name: Upload documentation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fusiondesk-docs-site
+          path: site
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Check GitHub Pages configuration
         id: pages
         if: github.event_name != 'pull_request'
