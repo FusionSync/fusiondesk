@@ -97,6 +97,10 @@ The old staged refactor notes, TODO logs, and interim SessionBus documents were 
    Linux clipboard endpoint plan based on the current clipboard module,
    channel model, and `fuse-promise` Promise filesystem integration.
 
+29. `CLIPBOARD_FORMAT_MATRIX.md`
+   Current clipboard canonical format registry, native OS format mapping,
+   endpoint support matrix, and cross-OS byte conversion rules.
+
 ## Current Scope
 
 The first `FusionDesk` implementation slice is intentionally narrow:

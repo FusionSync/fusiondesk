@@ -146,6 +146,13 @@ RuntimeHost
 
 Clipboard note: FUSIONDESK-MODULE-004 also includes the current real PC two-process formatted-text dry-run smoke for exact `text/html` and same-platform native-passthrough `text/rtf`, plus `clipboard_windows_validation.ps1 -Scenario Html|Rtf` with the RTF dry-run wrapper registered under CTest.
 
+Future clipboard relay note: multi-host fan-out and chained relay are deferred.
+When resumed, keep the lazy `TransferSourceBundle` model, add origin identity
+and route metadata, forward reads through relay nodes without eager
+materialization, enforce policy per hop, and keep file content on object-lock
+plus file-range streams. The detailed requirements are parked in
+`CLIPBOARD_REDIRECTION_FOUNDATION.md`.
+
 Drag note: `fusiondesk_windows_clipboard_remote_file_stream_tests` now includes
 a test `IDropTarget` that accepts the remote OLE data object and lazily reads
 `FileGroupDescriptorW` plus the first `FileContents` stream. This covers the

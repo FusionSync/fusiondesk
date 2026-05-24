@@ -1786,6 +1786,15 @@ if(FUSIONDESK_BUILD_QT_ADAPTERS)
                 fusiondesk_pc_shell_common
         )
 
+        add_executable(fusiondesk_clip
+            apps/pc/clip/main.cpp
+        )
+
+        target_link_libraries(fusiondesk_clip
+            PRIVATE
+                fusiondesk_pc_shell_common
+        )
+
         add_executable(fusiondesk_pc_profile_plan
             apps/pc/profile_plan/main.cpp
         )
@@ -2169,6 +2178,8 @@ if(FUSIONDESK_BUILD_QT_ADAPTERS)
 
         add_test(NAME fusiondesk_pc_client_smoke COMMAND fusiondesk_pc_client --smoke)
         add_test(NAME fusiondesk_pc_agent_smoke COMMAND fusiondesk_pc_agent --smoke)
+        add_test(NAME fusiondesk_clip_client_smoke COMMAND fusiondesk_clip --clip-role client --smoke)
+        add_test(NAME fusiondesk_clip_agent_smoke COMMAND fusiondesk_clip --clip-role agent --smoke)
         add_test(NAME fusiondesk_pc_agent_listen_profile_smoke COMMAND fusiondesk_pc_agent_listen_profile_smoke)
         add_test(NAME fusiondesk_pc_profile_plan_smoke COMMAND fusiondesk_pc_profile_plan_smoke)
         add_test(NAME fusiondesk_pc_feature_adapter_startup_smoke COMMAND fusiondesk_pc_feature_adapter_startup_smoke)

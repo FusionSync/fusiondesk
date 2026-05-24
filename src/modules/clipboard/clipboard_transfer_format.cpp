@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <optional>
 #include <utility>
 
 namespace fusiondesk {
@@ -138,6 +139,72 @@ bool sameNativeFormat(const NativeTransferFormat& left,
 }
 
 } // namespace
+
+std::vector<TransferCanonicalFormatSpec> defaultCanonicalTransferFormats()
+{
+    return {
+        {TextPlainUtf8Format,
+         TransferFormatClass::PlainText,
+         TransferCanonicalFormatScope::CrossOs,
+         TransferEncodingMode::CanonicalBytes,
+         true},
+        {TextHtmlFormat,
+         TransferFormatClass::Html,
+         TransferCanonicalFormatScope::CrossOs,
+         TransferEncodingMode::CanonicalBytes,
+         true},
+        {TextRtfFormat,
+         TransferFormatClass::Rtf,
+         TransferCanonicalFormatScope::CrossOs,
+         TransferEncodingMode::CanonicalBytes,
+         true},
+        {ImagePngFormat,
+         TransferFormatClass::Image,
+         TransferCanonicalFormatScope::CrossOs,
+         TransferEncodingMode::CanonicalBytes,
+         true},
+        {FdclFileListFormat,
+         TransferFormatClass::FileList,
+         TransferCanonicalFormatScope::CrossOs,
+         TransferEncodingMode::CanonicalBytes,
+         true},
+        {ImageDibFormat,
+         TransferFormatClass::Image,
+         TransferCanonicalFormatScope::SamePlatform,
+         TransferEncodingMode::NativePassthrough,
+         true},
+        {FdclOwnerMarkerFormat,
+         TransferFormatClass::OwnerMarker,
+         TransferCanonicalFormatScope::Internal,
+         TransferEncodingMode::CanonicalBytes,
+         false},
+    };
+}
+
+std::optional<TransferCanonicalFormatSpec> canonicalTransferFormatSpec(
+    const std::string& canonicalFormat)
+{
+    const std::string canonical = lowered(canonicalFormat);
+    for (TransferCanonicalFormatSpec spec :
+         defaultCanonicalTransferFormats()) {
+        if (lowered(spec.canonicalFormat) == canonical)
+            return spec;
+    }
+    return std::nullopt;
+}
+
+bool isKnownCanonicalTransferFormat(const std::string& canonicalFormat)
+{
+    return canonicalTransferFormatSpec(canonicalFormat).has_value();
+}
+
+bool isCrossOsCanonicalTransferFormat(const std::string& canonicalFormat)
+{
+    const std::optional<TransferCanonicalFormatSpec> spec =
+        canonicalTransferFormatSpec(canonicalFormat);
+    return spec.has_value() &&
+           spec->scope == TransferCanonicalFormatScope::CrossOs;
+}
 
 TransferFormatMappingResult DefaultTransferFormatMapper::mapNativeToCanonical(
     const TransferFormatMappingRequest& request) const

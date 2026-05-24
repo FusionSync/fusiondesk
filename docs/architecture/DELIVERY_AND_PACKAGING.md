@@ -52,6 +52,23 @@ build number
 Qt runtime libraries copied from QT_ROOT_DIR when available
 ```
 
+Clipboard CLI:
+
+```text
+fusiondesk-clip-windows-x64-<version>.zip
+bin/fusiondesk_clip.exe
+bin/fusiondesk_pc_profile_plan.exe
+fusiondesk_clip_agent.cmd
+fusiondesk_clip_client.cmd
+tools/clipboard_windows_validation.ps1
+
+fusiondesk-clip-linux-x86_64-<version>.zip
+bin/fusiondesk_clip
+bin/fusiondesk_pc_profile_plan
+fusiondesk_clip_agent.sh
+fusiondesk_clip_client.sh
+```
+
 Do not upload:
 
 ```text
@@ -91,6 +108,7 @@ Windows:
 cmake -S . -B build
 cmake --build build --config Release
 .\tools\package_windows_release.ps1 -BuildDir build -Configuration Release -OutputDir artifacts\release -Version dev
+.\tools\package_clip_windows_release.ps1 -BuildDir build -Configuration Release -OutputDir artifacts\release -Version dev
 ```
 
 Linux:
@@ -99,6 +117,7 @@ Linux:
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --config Release
 VERSION=dev bash tools/package_linux_release.sh
+VERSION=dev bash tools/package_clip_linux_release.sh
 ```
 
 The active GitHub Actions workflow is `.github/workflows/FusionDesk-release.yml`.

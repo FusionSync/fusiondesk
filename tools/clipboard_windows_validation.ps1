@@ -69,6 +69,18 @@ function Resolve-Executable {
     throw "Executable was not found: $Name"
 }
 
+function Resolve-OptionalExecutable {
+    param(
+        [string]$Name
+    )
+
+    try {
+        return Resolve-Executable -Name $Name
+    } catch {
+        return ""
+    }
+}
+
 function New-FreeTcpPort {
     $listener = [System.Net.Sockets.TcpListener]::new(
         [System.Net.IPAddress]::Loopback,
@@ -741,8 +753,25 @@ if ($Mode -eq "LocalNativeText" -and -not $FixedPorts) {
     $LargeDataPort = New-FreeTcpPort
 }
 
-$clientExe = Resolve-Executable -Name "fusiondesk_pc_client.exe"
-$agentExe = Resolve-Executable -Name "fusiondesk_pc_agent.exe"
+$clipExe = Resolve-OptionalExecutable -Name "fusiondesk_clip.exe"
+$clientExe = Resolve-OptionalExecutable -Name "fusiondesk_pc_client.exe"
+$agentExe = Resolve-OptionalExecutable -Name "fusiondesk_pc_agent.exe"
+if ([string]::IsNullOrWhiteSpace($clientExe) -or
+    [string]::IsNullOrWhiteSpace($agentExe)) {
+    if ([string]::IsNullOrWhiteSpace($clipExe)) {
+        throw "Neither fusiondesk_pc_client/fusiondesk_pc_agent nor fusiondesk_clip was found"
+    }
+    $clientExe = $clipExe
+    $agentExe = $clipExe
+}
+$clientRoleArguments = @()
+$agentRoleArguments = @()
+if ($clientExe -eq $clipExe) {
+    $clientRoleArguments = @("--clip-role", "client")
+}
+if ($agentExe -eq $clipExe) {
+    $agentRoleArguments = @("--clip-role", "agent")
+}
 $profilePlanExe = Resolve-Executable -Name "fusiondesk_pc_profile_plan.exe"
 $binDir = Split-Path -Parent $agentExe
 
@@ -771,7 +800,7 @@ if (Test-NativeDragLoopScenario) {
 if ($Mode -eq "Agent") {
     $agent = Start-LoggedProcess `
         -FilePath $agentExe `
-        -Arguments (New-AgentArguments -AgentProfile $agentProfile -RunMs (Get-RunMilliseconds -Default 20000)) `
+        -Arguments ($agentRoleArguments + (New-AgentArguments -AgentProfile $agentProfile -RunMs (Get-RunMilliseconds -Default 20000))) `
         -Name "agent" `
         -WorkingDirectory $binDir
     $agentExitCode = Wait-LoggedProcess -Handle $agent -TimeoutMs (Get-WaitMilliseconds -Default 25000)
@@ -821,7 +850,7 @@ if ($Mode -eq "Agent") {
 if ($Mode -eq "Client") {
     $client = Start-LoggedProcess `
         -FilePath $clientExe `
-        -Arguments (New-ClientArguments -ClientProfile $clientProfile -RunMs (Get-RunMilliseconds -Default 7000)) `
+        -Arguments ($clientRoleArguments + (New-ClientArguments -ClientProfile $clientProfile -RunMs (Get-RunMilliseconds -Default 7000))) `
         -Name "client" `
         -WorkingDirectory $binDir
     $clientExitCode = Wait-LoggedProcess -Handle $client -TimeoutMs (Get-WaitMilliseconds -Default 15000)
@@ -882,7 +911,7 @@ if ($Mode -eq "Client") {
 
 $agentHandle = Start-LoggedProcess `
     -FilePath $agentExe `
-    -Arguments (New-AgentArguments -AgentProfile $agentProfile -RunMs (Get-RunMilliseconds -Default 12000)) `
+    -Arguments ($agentRoleArguments + (New-AgentArguments -AgentProfile $agentProfile -RunMs (Get-RunMilliseconds -Default 12000))) `
     -Name "agent" `
     -WorkingDirectory $binDir
 
@@ -890,7 +919,7 @@ Start-Sleep -Milliseconds 300
 
 $clientHandle = Start-LoggedProcess `
     -FilePath $clientExe `
-    -Arguments (New-ClientArguments -ClientProfile $clientProfile -RunMs (Get-RunMilliseconds -Default 7000)) `
+    -Arguments ($clientRoleArguments + (New-ClientArguments -ClientProfile $clientProfile -RunMs (Get-RunMilliseconds -Default 7000))) `
     -Name "client" `
     -WorkingDirectory $binDir
 

@@ -74,12 +74,25 @@ jobs:
             -OutputDir artifacts\release `
             -Version "$env:PACKAGE_VERSION" `
             -Platform windows-x64
+          .\tools\package_clip_windows_release.ps1 `
+            -BuildDir build `
+            -Configuration Release `
+            -OutputDir artifacts\release `
+            -Version "$env:PACKAGE_VERSION" `
+            -Platform windows-x64
 
       - name: Upload Windows zip
         uses: actions/upload-artifact@v7
         with:
           name: fusiondesk-windows-x64
           path: artifacts/release/fusiondesk-windows-x64-*.zip
+          if-no-files-found: error
+
+      - name: Upload Windows clipboard CLI zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: fusiondesk-clip-windows-x64
+          path: artifacts/release/fusiondesk-clip-windows-x64-*.zip
           if-no-files-found: error
 
   linux:
@@ -128,12 +141,25 @@ jobs:
           CONFIGURATION=Release \
           OUTPUT_DIR=artifacts/release \
           bash tools/package_linux_release.sh
+          VERSION="$PACKAGE_VERSION" \
+          PLATFORM=linux-x86_64 \
+          BUILD_DIR=build \
+          CONFIGURATION=Release \
+          OUTPUT_DIR=artifacts/release \
+          bash tools/package_clip_linux_release.sh
 
       - name: Upload Linux zip
         uses: actions/upload-artifact@v7
         with:
           name: fusiondesk-linux-x86_64
           path: artifacts/release/fusiondesk-linux-x86_64-*.zip
+          if-no-files-found: error
+
+      - name: Upload Linux clipboard CLI zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: fusiondesk-clip-linux-x86_64
+          path: artifacts/release/fusiondesk-clip-linux-x86_64-*.zip
           if-no-files-found: error
 
   release:
@@ -166,7 +192,7 @@ jobs:
               --repo "$GITHUB_REPOSITORY" \
               --target "$GITHUB_SHA" \
               --title "FusionDesk $TAG_NAME" \
-              --notes "Automated FusionDesk Windows/Linux release zip packages."
+              --notes "Automated FusionDesk Windows/Linux release zip packages, including clipboard CLI packages."
           fi
 
           shopt -s globstar nullglob

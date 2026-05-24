@@ -39,6 +39,25 @@ enum class TransferFormatClass : std::uint16_t
     Custom = 7
 };
 
+enum class TransferCanonicalFormatScope : std::uint16_t
+{
+    Unknown = 0,
+    CrossOs = 1,
+    SamePlatform = 2,
+    Internal = 3
+};
+
+struct TransferCanonicalFormatSpec
+{
+    std::string canonicalFormat;
+    TransferFormatClass formatClass = TransferFormatClass::Unknown;
+    TransferCanonicalFormatScope scope =
+        TransferCanonicalFormatScope::Unknown;
+    TransferEncodingMode canonicalEncoding =
+        TransferEncodingMode::CanonicalBytes;
+    bool userVisible = false;
+};
+
 struct NativeTransferFormat
 {
     TransferPlatformFamily platform = TransferPlatformFamily::Unknown;
@@ -84,6 +103,12 @@ public:
     virtual TransferFormatClass formatClass(
         const std::string& canonicalFormat) const = 0;
 };
+
+std::vector<TransferCanonicalFormatSpec> defaultCanonicalTransferFormats();
+std::optional<TransferCanonicalFormatSpec> canonicalTransferFormatSpec(
+    const std::string& canonicalFormat);
+bool isKnownCanonicalTransferFormat(const std::string& canonicalFormat);
+bool isCrossOsCanonicalTransferFormat(const std::string& canonicalFormat);
 
 class DefaultTransferFormatMapper : public ITransferFormatMapper
 {

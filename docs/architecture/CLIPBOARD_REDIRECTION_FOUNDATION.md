@@ -440,17 +440,32 @@ target endpoint advertises that it can install the native representation
 If any condition fails, the module falls back to canonical bytes plus target
 native conversion, or rejects the format if no safe conversion exists.
 
-Default canonical registry:
+Canonical transfer registry:
+
+Default cross-OS formats are the only formats that both peers may treat as
+portable user content without an extra feature-specific negotiation. Their
+payload bytes must already be in the canonical representation before they cross
+the FDCL protocol boundary.
+
+The full current matrix of canonical formats, native OS format names, endpoint
+support, and byte conversion methods is maintained in
+`CLIPBOARD_FORMAT_MATRIX.md`.
 
 | canonicalFormat | Windows native names | Linux/Qt/Wayland native names | macOS native names | Android native names | Notes |
 | --- | --- | --- | --- | --- | --- |
-| `text/plain;charset=utf-8` | `CF_UNICODETEXT` | `UTF8_STRING`, `text/plain`, `text/plain;charset=utf-8` | `public.utf8-plain-text`, `public.utf16-plain-text` | `text/plain` | Canonical bytes are UTF-8 text. Windows native bytes are UTF-16LE with Windows line ending and terminator rules. |
-| `text/html` | `HTML Format` | `text/html` | `public.html` | `text/html` | Canonical bytes are UTF-8 HTML fragment/content. Windows native bytes may require CF_HTML header offsets. |
-| `text/rtf` | `Rich Text Format` | `text/rtf`, `application/rtf` | `public.rtf` | optional | Usually passthrough bytes, policy controlled separately from plain text. |
-| `image/png` | registered `PNG` or transcoded from `CF_DIB`/`CF_DIBV5` | `image/png` | `public.png` | `image/png` | Preferred cross-platform image representation. |
-| `image/x-dib` | `CF_DIB`, `CF_DIBV5` | optional | optional | optional | Windows-fidelity format. Prefer `image/png` for cross-platform unless same-platform passthrough is negotiated. |
-| `application/x-fdcl-file-list` | `FileGroupDescriptorW` + `FileContents`, or local `CF_HDROP` snapshot | `text/uri-list`, `x-special/gnome-copied-files`, `x-special/mate-copied-files` | `public.file-url`, file promise types | `text/uri-list`, content URI adapters | Canonical model is sanitized virtual file descriptors plus object ids. Raw local paths are not the protocol identity. |
-| `application/x-fdcl-owner-marker` | custom registered format | custom MIME target | custom pasteboard type | custom metadata | Loop suppression and ownership marker. Never exposed as user content. |
+| `text/plain;charset=utf-8` | `CF_UNICODETEXT` | `UTF8_STRING`, `text/plain`, `text/plain;charset=utf-8` | `public.utf8-plain-text`, `public.utf16-plain-text` | `text/plain` | Canonical bytes are UTF-8 text with no NUL terminator. Endpoints convert native UTF-16, CRLF, selection, and terminator rules locally. |
+| `text/html` | `HTML Format` | `text/html` | `public.html` | `text/html` | Canonical bytes are UTF-8 HTML fragment/content. Windows endpoints add or parse the CF_HTML header and byte offsets locally. |
+| `text/rtf` | `Rich Text Format` | `text/rtf`, `application/rtf` | `public.rtf` | optional | Canonical bytes are the RTF payload bytes. It is policy controlled separately from plain text. |
+| `image/png` | registered `PNG` or transcoded from `CF_DIB`/`CF_DIBV5` | `image/png` | `public.png` | `image/png` | Canonical bytes are PNG file bytes. Use this for cross-platform images. |
+| `application/x-fdcl-file-list` | `FileGroupDescriptorW` + `FileContents`, or local `CF_HDROP` snapshot | `text/uri-list`, `x-special/gnome-copied-files`, `x-special/mate-copied-files` | `public.file-url`, file promise types | `text/uri-list`, content URI adapters | Canonical bytes are FDCL sanitized virtual file descriptors and object ids. File bytes move later through LockObject/FileRange/UnlockObject streams. Raw local paths are never protocol identity. |
+
+Same-platform and internal canonical formats are valid module identities, but
+they are not default cross-OS content:
+
+| canonicalFormat | Scope | Notes |
+| --- | --- | --- |
+| `image/x-dib` | same-platform | Windows DIB bytes for Windows-fidelity passthrough. Cross-OS image exchange must use `image/png` unless a future negotiated transcoder explicitly allows otherwise. |
+| `application/x-fdcl-owner-marker` | internal | Loop suppression and ownership marker. Never exposed as user content, never audited as clipboard content, and never requested by a remote application. |
 
 Policy is evaluated on the canonical format, direction, byte count, source
 kind, and encoding mode. Policy may force canonical bytes even when
@@ -914,16 +929,21 @@ original request.
 
 Wire format names are canonical. Native names and ids are adapter metadata only.
 
-Initial canonical formats:
+Default cross-OS canonical formats:
 
 ```text
 text/plain;charset=utf-8
 text/html
 text/rtf
 image/png
+application/x-fdcl-file-list
+```
+
+Same-platform or internal canonical formats:
+
+```text
 image/x-dib
-application/x-file-list
-application/octet-stream
+application/x-fdcl-owner-marker
 ```
 
 Platform mapping examples:
@@ -933,7 +953,7 @@ Windows
   CF_UNICODETEXT          -> text/plain;charset=utf-8
   HTML Format             -> text/html
   CF_DIB / CF_DIBV5       -> image/x-dib or image/png after conversion
-  FileGroupDescriptorW    -> application/x-file-list
+  FileGroupDescriptorW    -> application/x-fdcl-file-list
   FileContents            -> file range stream source
 
 Linux X11 / Wayland
@@ -995,7 +1015,7 @@ File paste:
 
 ```text
 app requests file list
-  -> ReadFormatRequest(application/x-file-list)
+  -> ReadFormatRequest(application/x-fdcl-file-list)
   -> response returns descriptors, object ids, sanitized names, and sizes
   -> app requests file contents
   -> FileRangeRequest(objectId, fileIndex, offset, length)
@@ -1177,6 +1197,50 @@ If only `large_data` is degraded, metadata on `small_data` may continue only if
 the module can honestly reject stream-required content with `ChannelUnavailable`
 or `BackPressure`.
 
+## Future Multi-Host Relay
+
+The current clipboard implementation targets one local endpoint and one remote
+endpoint. Multi-host fan-out and chained relay, such as `A -> B,C,D` or
+`A -> B -> C`, are reserved for a later stage.
+
+The existing lazy `TransferSourceBundle` model should remain the foundation.
+Intermediate hosts must not eagerly materialize clipboard content just to relay
+it. They should advertise relay sources and forward reads only when a final
+consumer requests a format.
+
+Future relay requirements:
+
+```text
+origin identity
+  every relayed offer needs originNodeId, originSessionId, originOfferId, and
+  originOwnerEpoch; local sourceId and formatId remain bundle-scoped selectors
+
+route metadata
+  relayed offers need path, ttl, relayOnly, and seen-node data so cycles such
+  as A -> B -> C -> A are rejected
+
+lazy read forwarding
+  a paste on C sends ReadFormatRequest to B; B forwards to A without reading or
+  publishing locally unless policy requires a local transformation
+
+canonical boundary
+  cross-OS relay still uses canonical bytes; same-OS native passthrough is
+  allowed only when the end-to-end OS family, native format, storage medium,
+  and policy are compatible
+
+policy per hop
+  each hop may narrow the advertised format set; denied formats must not be
+  forwarded to downstream peers
+
+lifecycle
+  the origin ownerEpoch remains authoritative; stale reads through relays
+  return Conflict or NotFound instead of reading newer origin clipboard content
+
+file streams
+  file and directory content continues to use object locks and file-range
+  streams; relay nodes should not eagerly materialize large remote file trees
+```
+
 ## Platform Adapter Requirements
 
 Windows adapter:
@@ -1331,7 +1395,7 @@ client sends bounded DragMove events with surface coordinates only
 agent receives the offer and builds RemoteFdclTransferSource
 agent fake OS drag endpoint records native drag publication start
 agent fake coordinate mapper maps surface coordinates to remote desktop points
-agent fake drop target requests application/x-file-list
+agent fake drop target requests application/x-fdcl-file-list
 agent sends ReadFormatRequest back to client
 client returns sanitized file descriptors
 agent fake drop target requests first file range

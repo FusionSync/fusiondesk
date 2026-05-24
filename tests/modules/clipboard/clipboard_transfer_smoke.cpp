@@ -2,6 +2,7 @@
 #include <cassert>
 #include <cstddef>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -184,6 +185,64 @@ void mapsNativeNamesThroughCanonicalRegistry()
         [](const NativeTransferFormatCandidate& candidate) {
             return candidate.native.nativeFormatName == "text/x-moz-url";
         }));
+}
+
+void canonicalRegistryDefinesCrossOsSurface()
+{
+    const std::vector<TransferCanonicalFormatSpec> specs =
+        defaultCanonicalTransferFormats();
+    assert(!specs.empty());
+
+    const auto findSpec =
+        [&specs](const std::string& canonical)
+            -> const TransferCanonicalFormatSpec* {
+        const auto it = std::find_if(
+            specs.begin(),
+            specs.end(),
+            [&canonical](const TransferCanonicalFormatSpec& spec) {
+                return spec.canonicalFormat == canonical;
+            });
+        return it == specs.end() ? nullptr : &(*it);
+    };
+
+    const std::vector<std::string> crossOsFormats = {
+        TextPlainUtf8Format,
+        TextHtmlFormat,
+        TextRtfFormat,
+        ImagePngFormat,
+        FdclFileListFormat,
+    };
+
+    for (const std::string& canonical : crossOsFormats) {
+        const TransferCanonicalFormatSpec* spec = findSpec(canonical);
+        assert(spec != nullptr);
+        assert(spec->scope == TransferCanonicalFormatScope::CrossOs);
+        assert(spec->canonicalEncoding ==
+               TransferEncodingMode::CanonicalBytes);
+        assert(spec->userVisible);
+        assert(isKnownCanonicalTransferFormat(canonical));
+        assert(isCrossOsCanonicalTransferFormat(canonical));
+    }
+
+    const std::optional<TransferCanonicalFormatSpec> dib =
+        canonicalTransferFormatSpec(ImageDibFormat);
+    assert(dib.has_value());
+    assert(dib->formatClass == TransferFormatClass::Image);
+    assert(dib->scope == TransferCanonicalFormatScope::SamePlatform);
+    assert(dib->canonicalEncoding ==
+           TransferEncodingMode::NativePassthrough);
+    assert(!isCrossOsCanonicalTransferFormat(ImageDibFormat));
+
+    const std::optional<TransferCanonicalFormatSpec> ownerMarker =
+        canonicalTransferFormatSpec(FdclOwnerMarkerFormat);
+    assert(ownerMarker.has_value());
+    assert(ownerMarker->formatClass == TransferFormatClass::OwnerMarker);
+    assert(ownerMarker->scope == TransferCanonicalFormatScope::Internal);
+    assert(!ownerMarker->userVisible);
+    assert(!isCrossOsCanonicalTransferFormat(FdclOwnerMarkerFormat));
+
+    assert(!isKnownCanonicalTransferFormat("application/x-custom"));
+    assert(!isCrossOsCanonicalTransferFormat("application/x-custom"));
 }
 
 void identityTranscoderPassesCompatibleRepresentationsOnly()
@@ -782,6 +841,7 @@ void remoteFileWindowReadRejectsZeroByteNonEof()
 int main()
 {
     mapsNativeNamesThroughCanonicalRegistry();
+    canonicalRegistryDefinesCrossOsSurface();
     identityTranscoderPassesCompatibleRepresentationsOnly();
     defaultTranscoderConvertsPasteSideNativeRepresentations();
     sourceRegistryEnforcesBundleIdentity();
