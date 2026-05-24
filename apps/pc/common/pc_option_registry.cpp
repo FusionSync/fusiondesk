@@ -1,6 +1,7 @@
 #include "pc_option_registry.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cstdlib>
 #include <iomanip>
 #include <map>
@@ -386,6 +387,34 @@ std::string joinedEnumValues(const std::vector<std::string>& values)
     return joined;
 }
 
+std::string normalizedEnumValue(std::string value)
+{
+    for (char& ch : value) {
+        const unsigned char raw = static_cast<unsigned char>(ch);
+        ch = static_cast<char>(std::tolower(raw));
+        if (ch == '-' || ch == ' ')
+            ch = '_';
+    }
+    return value;
+}
+
+bool enumValueAllowed(const PcOptionDefinition& definition,
+                      const std::string& actualValue)
+{
+    if (std::find(definition.enumValues.begin(),
+                  definition.enumValues.end(),
+                  actualValue) != definition.enumValues.end()) {
+        return true;
+    }
+
+    const std::string normalizedActual = normalizedEnumValue(actualValue);
+    for (const std::string& allowed : definition.enumValues) {
+        if (normalizedEnumValue(allowed) == normalizedActual)
+            return true;
+    }
+    return false;
+}
+
 bool visibleInDefaultHelp(PcOptionVisibility visibility)
 {
     return visibility == PcOptionVisibility::User ||
@@ -502,9 +531,7 @@ PcOptionValidationResult validatePcShellOptions(int argc, char** argv)
             result.messages.push_back("option expects an unsigned integer: " +
                                       optionName);
         } else if (definition->valueType == PcOptionValueType::Enum &&
-                   std::find(definition->enumValues.begin(),
-                             definition->enumValues.end(),
-                             actualValue) == definition->enumValues.end()) {
+                   !enumValueAllowed(*definition, actualValue)) {
             result.ok = false;
             result.messages.push_back(
                 "invalid value for " + optionName + ": " + actualValue +

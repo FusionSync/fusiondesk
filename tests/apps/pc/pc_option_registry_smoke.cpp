@@ -35,6 +35,8 @@ int main()
                    "--clipboard-endpoint=linux",
                    "--profile-module",
                    "clipboard.redirect",
+                   "--display-target-platform",
+                   "windows-desktop",
                    "--clipboard-drag-start-x",
                    "-10"})) {
         return 1;
